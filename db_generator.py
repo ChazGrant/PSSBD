@@ -3,6 +3,7 @@ import string
 from typing import List
 import psycopg2
 import datetime
+import russian_names
 from CONFIG import CONFIG
 
 
@@ -60,50 +61,106 @@ def getRandomCallReasonId(cursor) -> int:
 
 def fillSocialStatuses(cursor) -> None:
     social_statuses = ["пенсионер", "рабочий", "служащий", "предприниматель"]
+    social_statuses = ["высший класс", "средний клас", "безработные", "студент", "иммигрант", "бездомный"]
     for social_status in social_statuses:
-        cursor.execute("INSERT INTO social_status(social_status_name) VALUES('%s');", (social_status, ))
+        cursor.execute("INSERT INTO social_status(social_status_name) VALUES(%s);", (social_status, ))
 
 def fillProcedures(cursor) -> None:
     procedures = ["укол", "электрокардиограмма", "кислородная подушка", "таблетки"]
+    # 6
+    procedures = ["вентиляция лёгких", "измерение пульса", "остановка кровотечения", "кардиоверсия", "измерение уровня сахара", "измерение артериального давления"]
     for procedure in procedures:
-        cursor.execute("INSERT INTO procedure(procedure_name) VALUES('%s');", (procedure, ))
+        cursor.execute("INSERT INTO procedure(procedure_name) VALUES(%s);", (procedure, ))
 
 def fillCallReasons(cursor) -> None:
     call_reasons = ["высокая температура", "сердечный приступ", "головная боль", "высокое давление", "боль в животе"]
+    call_reasons = ["судороги", "слабость", "подозрение на инсульт", "отёк", "отравление"]
     for call_reason in call_reasons:
         cursor.execute("INSERT INTO call_reason(call_reason_name) VALUES(%s);", (call_reason, ))
 
-def fillSickPeople(cursor) -> None:
-    for _ in range(50):
-        full_name = generateRandomName()
-        birth_date = generateRandomBirthDate()
-        social_status_id = getRandomSocialStatusId(cursor)
-        phone_number = generateRandomPhoneNumber()
-        address = generateRandomAddress()
+def fillSickPeople(cursor, conn) -> None:
+    for i in range(30000):
+        batch_data = list()
+        sql = "INSERT INTO sick_people(full_name, birth_date, social_status_id, phone_number, address) VALUES"
+        for ii in range(1000):
+            full_name = russian_names.RussianNames().get_person()
+            birth_date = generateRandomBirthDate()
+            social_status_id = random.randint(5, 8)
+            phone_number = generateRandomPhoneNumber()
+            address = generateRandomAddress()
 
-        cursor.execute("INSERT INTO sick_people(full_name, birth_date, social_status_id, phone_number, address) \
-            VALUES (%s, %s, %s, %s, %s);", (full_name, birth_date, social_status_id, phone_number, address))
+            batch_data.append([full_name, birth_date, social_status_id, phone_number, address])
 
-def fillCallRequests(cursor) -> None:
-    for _ in range(50):
-        sick_people_id = getRandomSickPeopleId(cursor)
-        call_date_time = getRandomCallDateTime()
-        call_reason_id = getRandomCallReasonId(cursor)
-        money_payment = generateRandomEquivalent()
-
-        cursor.execute("INSERT INTO call_requests(sick_people_id, call_date_time, call_reason_id, money_payment) \
-            VALUES (%s, %s, %s, %s);", (sick_people_id, call_date_time, call_reason_id, money_payment))
-
-def fillFirstAidStations(cursor) -> None:
-    for _ in range(50):
-        first_aid_station_number = random.randint(1000, 9999)
-        city_district = random.choice(CITY_DISTRICTS)
-        employees_amount = random.randint(250, 300)
-        phone_number = generateRandomPhoneNumber()
-        address = generateRandomAddress()
+            if (ii + 1) % 250 == 0:
+                print(ii + 1)
         
-        cursor.execute("INSERT INTO first_aid_stations(first_aid_station_number, city_district, employees_amount, phone_number, address) \
-            VALUES (%s, %s, %s, %s, %s);", (first_aid_station_number, city_district, employees_amount, phone_number, address))
+        for items in batch_data:
+            sql += "(" + ", ".join([f"'{item}'" for item in items]) + "), "
+
+        sql = sql[:-2] + ";"
+
+        cursor.execute(sql)
+        conn.commit()
+
+        print("%d/29000" % ((i + 1) * 1000))
+        print()
+
+def fillCallRequests(cursor, conn) -> None:
+    for i in range(0, 24001, 1000):
+        batch_data = list()
+        sql = "INSERT INTO call_requests(sick_people_id, call_date_time, call_reason_id, money_payment) VALUES"
+        for ii in range(1000):
+            sick_people_id = getRandomSickPeopleId(cursor)
+            call_date_time = getRandomCallDateTime()
+            call_reason_id = random.randint(2, 6)
+            money_payment = generateRandomEquivalent()
+
+            batch_data.append([sick_people_id, call_date_time, call_reason_id, money_payment])
+            if (ii + 1) % 250 == 0:
+                print(ii + 1)
+        
+        for items in batch_data:
+            sql += "(" + ", ".join([f"'{item}'" for item in items]) + "), "
+
+        sql = sql[:-2] + ";"
+
+        cursor.execute(sql)
+        conn.commit()
+
+        print("%d/30000" % ((i) ))
+        print()
+
+def fillFirstAidStations(cursor, conn) -> None:
+    for i in range(30):
+        batch_data = list()
+        sql = "INSERT INTO first_aid_stations(first_aid_station_number, city_district, employees_amount, phone_number, address) VALUES"
+        cursor.execute("SELECT first_aid_station_number FROM first_aid_stations;")
+        station_numbers = [item[0] for item in cursor.fetchall()]
+        for ii in range(1000):
+            while True:
+                first_aid_station_number = random.randint(1, 99999)
+                if first_aid_station_number not in station_numbers:
+                    station_numbers.append(first_aid_station_number)
+                    break
+            city_district = random.choice(CITY_DISTRICTS)
+            employees_amount = random.randint(150, 300)
+            phone_number = generateRandomPhoneNumber()
+            address = generateRandomAddress()
+            
+            batch_data.append([first_aid_station_number, city_district, employees_amount, phone_number, address])
+            if (ii + 1) % 250 == 0:
+                print(ii + 1)
+        
+        for items in batch_data:
+            sql += "(" + ", ".join([f"'{item}'" for item in items]) + "), "
+
+        sql = sql[:-2] + ";"
+
+        cursor.execute(sql)
+        conn.commit()
+
+        print("%d/30000" % ((i + 1) * 1000) )
+        print()
 
 def getRandomProcedureId(cursor) -> int:
     cursor.execute("SELECT COUNT(*) FROM procedure;")
@@ -117,23 +174,35 @@ def getAllCallRequests(cursor) -> List[int]:
     cursor.execute("SELECT call_request_id FROM call_requests;")
     return [int(item[0]) for item in cursor.fetchall()]
 
-def fillProcedureApplication(cursor) -> None:
+def fillProcedureApplication(cursor, conn) -> None:
     call_requests_id = getAllCallRequests(cursor)
-    for call_request_id in call_requests_id[1:]:
+    sql = "INSERT INTO procedure_application(application_id, procedure_id) VALUES"
+    batch_data = list()
+    for idx, call_request_id in enumerate(call_requests_id):
         procedures_amount = random.randint(1, 4)
         procedures_id = []
         while True:
-            procedure_id = getRandomProcedureId(cursor)
+            procedure_id = random.randint(2, 5)
             if procedure_id in procedures_id:
                 continue
 
             procedures_id.append(procedure_id)
             if len(procedures_id) == procedures_amount:
                 break
-        
-        for procedure_id in procedures_id:
-            cursor.execute("INSERT INTO procedure_application(application_id, procedure_id) VALUES (%s, %s);",
-            (call_request_id, procedure_id))
+        for proc_id in procedures_id:
+            batch_data.append([call_request_id, proc_id])
+
+        if (idx + 1) % 500 == 0:
+            print(idx + 1)
+    
+    for items in batch_data:
+        sql += "(" + ", ".join([str(item) for item in items]) + "), "
+
+    sql = sql[:-2] + ";"
+
+    cursor.execute(sql)
+    conn.commit()
+
 
 def generateRandomPhoneNumber() -> str:
     return ''.join(random.choice(string.digits) for _ in range(10))
@@ -152,8 +221,7 @@ def generateRandomEquivalent() -> int:
 def main():
     conn = psycopg2.connect(**CONFIG)
     cursor = conn.cursor()
-
-    fillProcedureApplication(cursor)
+    fillCallReasons(cursor)
     conn.commit()
 
 if __name__ == "__main__":
