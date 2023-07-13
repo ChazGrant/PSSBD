@@ -215,12 +215,70 @@ def createIndexByKeyElementTwo():
                         USING GIN ((call_request_json_data -> 'call_reason_name'));")
     conn.commit()
 
-def explainFunction():
-    ...
+def explainFunctionOne():
+    cursor.execute("EXPLAIN(ANALYZE) SELECT call_request_json_data ->> 'call_reason_name' as call_reason, \
+                   call_request_json_data ->> 'money_payment' as money_ \
+                   FROM json_call_requests \
+                   WHERE call_request_json_data ->> 'money_payment' = '500';")
+    print(cursor.fetchall())
+    cursor.execute("EXPLAIN(ANALYZE) SELECT call_request_json_data ->> 'call_reason_name' as call_reason, \
+                           call_request_json_data ->> 'money_payment' as money_ \
+                    FROM json_call_requests \
+                    WHERE call_request_json_data @> '{\"money_payment\": \"500\"}';")
+    print(cursor.fetchall())
 
-def analyzeFunction():
-    ...
+def explainFunctionTwo():
+    cursor.execute("EXPLAIN(ANALYZE) SELECT * \
+                FROM jsonb_populate_recordset(null::record, \
+                (SELECT jsonb_path_query_array(call_request_json_data, '$.sick_person[*]') \
+                FROM json_call_requests \
+                WHERE call_request_json_data->>'call_date_time' = '2018-12-01 21:41:02') \
+                ) AS (\"name\" varchar, \"surname\" varchar, \"age\" integer, \"gender\" integer);")
+    print(cursor.fetchall())
 
+    cursor.execute("EXPLAIN(ANALYZE) SELECT * \
+                FROM jsonb_populate_recordset(null::record, \
+                (SELECT jsonb_path_query_array(call_request_json_data, '$.sick_person[*]') \
+                FROM json_call_requests \
+                WHERE call_request_json_data @> '{\"call_date_time\": \"2018-12-01 21:41:02\"}') \
+                ) AS (\"name\" varchar, \"surname\" varchar, \"age\" integer, \"gender\" integer);")
+    print(cursor.fetchall())
+
+def explainFunctionThree():
+    cursor.execute("SELECT jsonb_each_text( \
+                   jsonb_path_query(call_request_json_data, '$.sick_person[*]?(@.age == 40)')) \
+                   FROM json_call_requests \
+                   WHERE jsonb_path_match( \
+                   call_request_json_data, 'exists($.sick_person[*].credentials.additional_info.city ? (@ == \"New York\"))')")
+    data = cursor.fetchall()
+    print(data)
+
+    cursor.execute("EXPLAIN(ANALYZE) SELECT * \
+                FROM jsonb_populate_recordset(null::record, \
+                (SELECT jsonb_path_query_array(call_request_json_data, '$.sick_person[*]') \
+                FROM json_call_requests \
+                WHERE call_request_json_data @> '{\"call_date_time\": \"2018-12-01 21:41:02\"}') \
+                ) AS (\"name\" varchar, \"surname\" varchar, \"age\" integer, \"gender\" integer);")
+    print(cursor.fetchall())
+
+def explainFunctionFour():
+    cursor.execute("SELECT jsonb_each_text( \
+                   jsonb_path_query(call_request_json_data, '$.sick_person[*]?(@.age == 40)')) \
+                   FROM json_call_requests \
+                   WHERE jsonb_path_match( \
+                   call_request_json_data, 'exists($.sick_person[*].credentials.additional_info.city ? (@ == \"New York\"))')")
+    data = cursor.fetchall()
+    print(data)
+
+def explainFunctionFive():
+    cursor.execute("SELECT * \
+                   FROM jsonb_populate_record(null::record, \
+                   (SELECT jsonb_path_query(call_request_json_data, '$.sick_person[*]?(@.age == 40)') \
+                   FROM json_call_requests \
+                   WHERE call_request_json_data->>'call_date_time' = '2018-12-01 21:41:02') \
+                   ) AS (\"name\" varchar, \"surname\" varchar, \"age\" integer, \"gender\" integer);")
+    data = cursor.fetchall()
+    print(data)
 
 if __name__ == "__main__":
-    ...
+    explainFunctionThree()
