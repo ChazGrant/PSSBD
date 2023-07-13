@@ -245,7 +245,7 @@ def explainFunctionTwo():
     print(cursor.fetchall())
 
 def explainFunctionThree():
-    cursor.execute("SELECT jsonb_each_text( \
+    cursor.execute("EXPLAIN(ANALYZE) SELECT jsonb_each_text( \
                    jsonb_path_query(call_request_json_data, '$.sick_person[*]?(@.age == 40)')) \
                    FROM json_call_requests \
                    WHERE jsonb_path_match( \
@@ -253,25 +253,33 @@ def explainFunctionThree():
     data = cursor.fetchall()
     print(data)
 
-    cursor.execute("EXPLAIN(ANALYZE) SELECT * \
-                FROM jsonb_populate_recordset(null::record, \
-                (SELECT jsonb_path_query_array(call_request_json_data, '$.sick_person[*]') \
-                FROM json_call_requests \
-                WHERE call_request_json_data @> '{\"call_date_time\": \"2018-12-01 21:41:02\"}') \
-                ) AS (\"name\" varchar, \"surname\" varchar, \"age\" integer, \"gender\" integer);")
+    cursor.execute("EXPLAIN(ANALYZE) SELECT jsonb_each_text( \
+                   jsonb_path_query(call_request_json_data, '$.sick_person[*]?(@.age == 40)')) \
+                   FROM json_call_requests \
+                   WHERE call_request_json_data @@ 'exists($.sick_person[*].credentials.additional_info.cty ? (@ == \"New York\"))'")
     print(cursor.fetchall())
 
 def explainFunctionFour():
-    cursor.execute("SELECT jsonb_each_text( \
-                   jsonb_path_query(call_request_json_data, '$.sick_person[*]?(@.age == 40)')) \
-                   FROM json_call_requests \
-                   WHERE jsonb_path_match( \
-                   call_request_json_data, 'exists($.sick_person[*].credentials.additional_info.city ? (@ == \"New York\"))')")
+    cursor.execute("EXPLAIN(ANALYZE) SELECT call_request_json_data ->> 'call_reason_name' as call_reason, \
+                           call_request_json_data ->> 'money_payment' as money, \
+                           (call_request_json_data -> 'sick_person' ->> 'gender')::int as gender, \
+                           call_request_json_data -> 'sick_person' -> 'credentials' ->> 'passport_series' as passport_series \
+                    FROM json_call_requests \
+                    WHERE (call_request_json_data -> 'sick_person' ->> 'age')::int = 30;")
+    data = cursor.fetchall()
+    print(data)
+
+    cursor.execute("EXPLAIN(ANALYZE) SELECT call_request_json_data ->> 'call_reason_name' as call_reason, \
+                           call_request_json_data ->> 'money_payment' as money, \
+                           (call_request_json_data -> 'sick_person' ->> 'gender')::int as gender, \
+                           call_request_json_data -> 'sick_person' -> 'credentials' ->> 'passport_series' as passport_series \
+                    FROM json_call_requests \
+                    WHERE (call_request_json_data @> '{\"age\": \"30\"}');")
     data = cursor.fetchall()
     print(data)
 
 def explainFunctionFive():
-    cursor.execute("SELECT * \
+    cursor.execute("EXPLAIN(ANALYZE) SELECT * \
                    FROM jsonb_populate_record(null::record, \
                    (SELECT jsonb_path_query(call_request_json_data, '$.sick_person[*]?(@.age == 40)') \
                    FROM json_call_requests \
@@ -280,5 +288,14 @@ def explainFunctionFive():
     data = cursor.fetchall()
     print(data)
 
+    cursor.execute("EXPLAIN(ANALYZE) SELECT * \
+                   FROM jsonb_populate_record(null::record, \
+                   (SELECT jsonb_path_query(call_request_json_data, '$.sick_person[*]?(@.age == 40)') \
+                   FROM json_call_requests \
+                   WHERE call_request_json_data @> '{\"call_date_time\": \"2018-12-01 21:41:02\"}') \
+                   ) AS (\"name\" varchar, \"surname\" varchar, \"age\" integer, \"gender\" integer);")
+    data = cursor.fetchall()
+    print(data)
+
 if __name__ == "__main__":
-    explainFunctionThree()
+    ...
