@@ -47,7 +47,7 @@ def fillJsonDB():
 
     for i in range(87500):
         call_reason_name = getRandomCallReasonName(cursor)
-        sick_person_name, sick_person_surname, _, sick_person_gender = russian_names.RussianNames().get_person().split(" ")
+        sick_person_name, _, sick_person_surname, sick_person_gender = russian_names.RussianNames().get_person().split(" ")
         sick_person_gender = 1 if sick_person_gender == "True" else 0
         sick_person_age = random.randint(18, 70)
         passport_series = "".join([str(random.randint(0, 9)) for _ in range(4)])
