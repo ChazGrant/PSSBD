@@ -23,38 +23,37 @@ def totalQueryWithDataCondition():
 
 def totalQueryWithGroupCondition():
     cursor.execute("SELECT cr.call_reason_name, SUM(money_payment) AS total_payment FROM call_requests \
-        INNER JOIN call_reason cr ON call_requests.call_reason_id=cr.call_reason_id GROUP BY cr.call_reason_name;")
-    data = cursor.fetchone()
-    for item in data:
-        print(item)
+        INNER JOIN call_reason cr ON call_requests.call_reason_id=cr.call_reason_id \
+        GROUP BY cr.call_reason_name;")
+    data = cursor.fetchall()
+    print(data)
 
 def totalQueryWithDataGroupCondition():
     cursor.execute("SELECT cr.call_reason_name, SUM(money_payment) AS total_payment FROM call_requests \
         INNER JOIN call_reason cr ON call_requests.call_reason_id=cr.call_reason_id \
-            WHERE call_requests.call_reason_id IN (2, 3, 4) \
+            WHERE call_requests.call_reason_id IN (2, 4) \
             GROUP BY cr.call_reason_name;")
-    data = cursor.fetchone()
-    for item in data:
-        print(item)
+    data = cursor.fetchall()
+    print(data)
 
 def queryOnTotalQuery():
     cursor.execute("SELECT call_date_time, money_payment FROM call_requests WHERE money_payment > \
-        (SELECT AVG(money_payment) FROM call_requests)")
+        (SELECT AVG(money_payment) FROM call_requests) LIMIT 10;")
     data = cursor.fetchall()
     for item in data:
         print(item)
 
 def totalQueryWithSubquery():
     cursor.execute("SELECT call_date_time, money_payment FROM call_requests WHERE money_payment > \
-        (SELECT money_payment FROM call_requests LIMIT 1);")
+        (SELECT money_payment FROM call_requests LIMIT 1) LIMIT 10;")
     data = cursor.fetchall()
     for item in data:
         print(item)
 
 if __name__ == "__main__":
-    totalQueryWithDataCondition()
-    totalQueryWithDataGroupCondition()
-    totalQueryWithGroupCondition()
     totalQueryWithoutCondition()
-    totalQueryWithSubquery()
+    totalQueryWithDataCondition()
+    totalQueryWithGroupCondition()
+    totalQueryWithDataGroupCondition()
     queryOnTotalQuery()
+    totalQueryWithSubquery()
