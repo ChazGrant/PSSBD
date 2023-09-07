@@ -161,5 +161,5 @@ def simpleTableCreation():
 
 if __name__ == "__main__":
     # simpleTableCreation()
-    # explainFirstSectionTableAndCopyTable()
+    explainFirstSectionTableAndCopyTable()
     explainSecondSectionTableAndCopyTable()

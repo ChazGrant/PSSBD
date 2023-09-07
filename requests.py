@@ -13,17 +13,17 @@ cursor = conn.cursor()
 
 def symmetricInnerRequestWithConditionExternalKeyOne():
     cursor.execute("SELECT sp.full_name, sp.birth_date, sc.social_status_name FROM sick_people sp\
-                   INNER JOIN social_status sc ON sp.social_status_id=sc.social_status_id")
+                   INNER JOIN social_status sc ON sp.social_status_id=sc.social_status_id \
+                   WHERE sc.social_status_name=%s", ("пенсионер", ))
     items = cursor.fetchall()
-    for item in items:
-        print(item)
+    print(items)
 
 def symmetricInnerRequestWithConditionExternalKeyTwo():
     cursor.execute("SELECT sp.full_name, cr.call_date_time, cr.money_payment FROM call_requests cr \
-                   INNER JOIN sick_people sp ON sp.sick_people_id=cr.sick_people_id")
+                   INNER JOIN sick_people sp ON sp.sick_people_id=cr.sick_people_id \
+                   WHERE sp.full_name=%s", ("Вероника Петровна Кнепская", ))
     items = cursor.fetchall()
-    for item in items:
-        print(item)
+    print(items)
 
 def symmetricInnerRequestWithConditionDateOne():
     cursor.execute("SELECT sp.full_name, cr.call_date_time, cr.money_payment FROM call_requests cr \
@@ -95,4 +95,4 @@ def requestOnRequestLeftJoin():
 
 
 if __name__ == "__main__":
-    requestOnRequestLeftJoin()
+    symmetricInnerRequestWithConditionExternalKeyTwo()
