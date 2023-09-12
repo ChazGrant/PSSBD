@@ -1,6 +1,7 @@
 from PyQt5 import QtWidgets
-from loginUI import Ui_MainWindow
+from login_formUI import Ui_MainWindow
 import psycopg2
+
 
 class LoginForm(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
@@ -18,22 +19,26 @@ class LoginForm(QtWidgets.QMainWindow, Ui_MainWindow):
         
         CONFIG = {
             "database": "ambulance",
-            "user": "ambulance_admin",
-            "password": "secretpassword",
-            "host": "192.168.1.105",
-            "password": 5432
+            "user": username,
+            "password": password,
+            "host": "127.0.0.1",
+            "port": 5432
         }
 
-        try:
-            conn = psycopg2.connect(**CONFIG)
-            cursor = conn.cursor()
+        conn = psycopg2.connect(**CONFIG)
+        cursor = conn.cursor()
 
-            cursor.execute("SELECT * FROM call_reason LIMIT 10")
-            print(cursor.fetchall())
-            cursor.execute("SELECT * FROM sick_people LIMIT 10")
-            print(cursor.fetchall())
-        except Exception as e:
-            raise
+        queries = ["SELECT * FROM call_reason LIMIT 10",
+                    "SELECT * FROM sick_people LIMIT 10",
+                    "SELECT * FROM call_requests LIMIT 10"]
+
+        for query in queries:
+            try:
+                cursor.execute(query)
+                print(cursor.fetchall())
+            except Exception as e:
+                conn.rollback()
+                print(str(e))
 
 
 if __name__ == "__main__":
