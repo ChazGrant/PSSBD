@@ -1,7 +1,7 @@
 from PyQt5 import QtWidgets
 from login_formUI import Ui_MainWindow
 import psycopg2
-
+from main import MainWindow
 
 class LoginForm(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
@@ -17,28 +17,36 @@ class LoginForm(QtWidgets.QMainWindow, Ui_MainWindow):
         if not (username or password):
             return
         
-        CONFIG = {
-            "database": "ambulance",
-            "user": username,
-            "password": password,
-            "host": "127.0.0.1",
-            "port": 5432
-        }
+        from CONFIG import CONFIG
 
-        conn = psycopg2.connect(**CONFIG)
-        cursor = conn.cursor()
+        # ambulance_operator (fN6Pn!5
+        # doctor u8YVX,:2
+        # nurse ]Lg4SSr4
+        CONFIG["user"] = "postgres"
+        CONFIG["password"] = "postgres"
 
-        queries = ["SELECT * FROM call_reason LIMIT 10",
-                    "SELECT * FROM sick_people LIMIT 10",
-                    "SELECT * FROM call_requests LIMIT 10"]
+        print(CONFIG)
+        try:
+            conn = psycopg2.connect(**CONFIG)
+            cursor = conn.cursor()
+        except psycopg2.OperationalError:
+            return
 
-        for query in queries:
-            try:
-                cursor.execute(query)
-                print(cursor.fetchall())
-            except Exception as e:
-                conn.rollback()
-                print(str(e))
+        self.widget = MainWindow(cursor, conn)
+        self.widget.show()
+        self.close()
+
+        # queries = ["SELECT * FROM call_reason LIMIT 10",
+        #             "SELECT * FROM sick_people LIMIT 10",
+        #             "SELECT * FROM call_requests LIMIT 10"]
+
+        # for query in queries:
+        #     try:
+        #         cursor.execute(query)
+        #         print(cursor.fetchall())
+        #     except Exception as e:
+        #         conn.rollback()
+        #         print(str(e))
 
 
 if __name__ == "__main__":
