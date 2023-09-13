@@ -2,6 +2,23 @@ from PyQt5 import QtWidgets
 from login_formUI import Ui_MainWindow
 import psycopg2
 from main import MainWindow
+from CONFIG import CONFIG
+
+
+def showMessage(text: str):
+    msg = QtWidgets.QMessageBox()
+    msg.setIcon(QtWidgets.QMessageBox.Information)
+    msg.setText(text)
+    msg.setWindowTitle("Info")
+    msg.exec_()
+
+def showError(text: str):
+    msg = QtWidgets.QMessageBox()
+    msg.setIcon(QtWidgets.QMessageBox.Critical)
+    msg.setText(text)
+    msg.setWindowTitle("Error")
+    msg.exec_()
+
 
 class LoginForm(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
@@ -16,37 +33,27 @@ class LoginForm(QtWidgets.QMainWindow, Ui_MainWindow):
 
         if not (username or password):
             return
-        
-        from CONFIG import CONFIG
 
         # ambulance_operator (fN6Pn!5
         # doctor u8YVX,:2
         # nurse ]Lg4SSr4
-        CONFIG["user"] = "postgres"
-        CONFIG["password"] = "postgres"
+        CONFIG["user"] = "ambulance_operator"
+        CONFIG["password"] = "(fN6Pn!5"
 
-        print(CONFIG)
         try:
             conn = psycopg2.connect(**CONFIG)
             cursor = conn.cursor()
         except psycopg2.OperationalError:
-            return
+            return showError("Неверные данные для входа")
 
         self.widget = MainWindow(cursor, conn)
         self.widget.show()
-        self.close()
+        self.hide()
 
-        # queries = ["SELECT * FROM call_reason LIMIT 10",
-        #             "SELECT * FROM sick_people LIMIT 10",
-        #             "SELECT * FROM call_requests LIMIT 10"]
+        self.username_textEdit.setText("")
+        self.password_textEdit.setText("")
 
-        # for query in queries:
-        #     try:
-        #         cursor.execute(query)
-        #         print(cursor.fetchall())
-        #     except Exception as e:
-        #         conn.rollback()
-        #         print(str(e))
+        self.widget.window_closed.connect(self.show)
 
 
 if __name__ == "__main__":
