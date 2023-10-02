@@ -36,16 +36,20 @@
 # просматривать таблицу больные)
 
 
-from typing import List
+from typing import List, Any
 from PyQt5 import QtGui, QtWidgets, QtCore
 from main_formUI import Ui_MainWindow
 import psycopg2
 
 from inspect import getmembers, isfunction
-import requests
+import complex_requests, requests
+
 
 QUERIES = dict()
 for function_name, function in getmembers(requests, isfunction):
+    QUERIES[function_name] = function
+
+for function_name, function in getmembers(complex_requests, isfunction):
     QUERIES[function_name] = function
 
 def showMessage(text: str):
@@ -72,6 +76,38 @@ TABLES_DICT = {
     "Социальные статусы": "social_status"
 }
 
+import plotly
+import plotly.graph_objs as go
+import plotly.express as px
+from plotly.subplots import make_subplots
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+def drawGraph(values: List[int], labels: List[str], title: str) -> None:
+    fig, ax = plt.subplots()
+    ax.pie(values, labels=labels)
+    ax.set_title(title)
+    plt.tight_layout()
+    plt.show()
+
+import openpyxl
+import datetime
+def saveDataToExcel(columns_names: List[str], values: List[List[Any]], report_name: str) -> None:
+    wb = openpyxl.Workbook()
+    ws = wb.active
+
+    for idx, column in enumerate(columns_names):
+        ws.cell(row=1, column=idx + 1).value = column
+        ws.cell(row=1, column=idx + 1).font = openpyxl.styles.Font(bold=True)
+
+    for row_idx, row in enumerate(values):
+        for column_idx, column in enumerate(row):
+            ws.cell(row=row_idx + 2, column=column_idx + 1).value = column
+
+    current_datetime = datetime.datetime.now().strftime("%d.%m.%y")
+    wb_name = f"Отчёт по {report_name} {current_datetime}.xlsx"
+    wb.save(wb_name)
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     window_closed = QtCore.pyqtSignal()
@@ -92,6 +128,22 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.addRecord_pushButton.pressed.connect(self._addRecord)
 
         self.deleteRecord_pushButton.pressed.connect(self._deleteRecord)
+
+        self.tmp()
+
+    def tmp(self):
+        query_name = self.queries_comboBox.currentText()
+        try:
+            QUERIES[query_name](self._cursor)
+        except psycopg2.errors.InsufficientPrivilege:
+            showError("У Вас недостаточно прав для выполнения данного запроса")
+            self._conn.rollback()
+            return
+        
+        columns_names = [desc[0] for desc in self._cursor.description]
+        data = self._cursor.fetchall()
+
+        saveDataToExcel(columns_names, data, self.queries_comboBox.currentText())
 
     def __setComboBoxes(self):
         self.__setTables()
@@ -216,6 +268,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 if __name__ == "__main__":
+    # drawGraph([30, 15, 20], ["First", "Second", "Third"], "Итоговый запрос")
+    # exit()
     app = QtWidgets.QApplication([])
     widget = MainWindow()
     widget.show()

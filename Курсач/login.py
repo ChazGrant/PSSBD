@@ -37,8 +37,8 @@ class LoginForm(QtWidgets.QMainWindow, Ui_MainWindow):
         # ambulance_operator (fN6Pn!5
         # doctor u8YVX,:2
         # nurse ]Lg4SSr4
-        CONFIG["user"] = "ambulance_operator"
-        CONFIG["password"] = "(fN6Pn!5"
+        # CONFIG["user"] = "ambulance_operator"
+        # CONFIG["password"] = "(fN6Pn!5"
 
         try:
             conn = psycopg2.connect(**CONFIG)
