@@ -36,7 +36,7 @@
 # просматривать таблицу больные)
 
 
-from typing import List, Any
+from typing import List, Any, Dict
 from PyQt5 import QtGui, QtWidgets, QtCore
 from main_formUI import Ui_MainWindow
 import psycopg2
@@ -44,8 +44,14 @@ import psycopg2
 from inspect import getmembers, isfunction
 import sys
 
-args = sys.argv
-if "--test" in args:
+from numpy import round as np_round
+import matplotlib.pyplot as plt
+
+import openpyxl
+import datetime
+
+
+if "--test" in sys.argv:
     TESTING_ENABLED = 1
     requests, complex_requests = [], []
 else:
@@ -84,21 +90,16 @@ TABLES_DICT = {
     "Социальные статусы": "social_status"
 }
 
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-def drawGraph(values: List[int], labels: List[str], title: str) -> None:
+def drawPieChart(values: List[int], labels: List[str], title: str) -> None:
     if not len(values) == len(labels):
         return "Length should be equal"
 
     max_index_value = values.index(max(values))
-    get_value = lambda x: np.round(x / 100 * sum(values))
+    get_value = lambda x: np_round(x / 100 * sum(values))
     plt.pie(values, labels=labels, explode=tuple([0 for _ in values[:max_index_value]]) + tuple([.1]) + tuple([0 for _ in values[max_index_value + 1:]]), autopct=get_value)
     plt.title(title)
     plt.show()
 
-import openpyxl
-import datetime
 def saveDataToExcel(columns_names: List[str], values: List[List[Any]], report_name: str) -> None:
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -115,6 +116,7 @@ def saveDataToExcel(columns_names: List[str], values: List[List[Any]], report_na
     wb_name = f"Отчёт по {report_name} {current_datetime}.xlsx"
     wb.save(wb_name)
 
+
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     window_closed = QtCore.pyqtSignal()
     def __init__(self, cursor, conn):
@@ -130,9 +132,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.visualizeTable_pushButton.pressed.connect(self._visualizeTable)
         self.visualizeQuery_pushButton.pressed.connect(self._visualizeQuery)
         self.saveToExcel_pushButton.pressed.connect(self._saveToExcel)
+        self.buildSummaryChart_pushButton.pressed.connect(self._buildSummaryChart)
+
+        self.buildSummaryChart_pushButton.setEnabled(False)
 
         self.addRow_pushButton.pressed.connect(self._addRowToTheTableWidget)
         self.addRecord_pushButton.pressed.connect(self._addRecord)
+
+        self.tables_comboBox.textChanged.connect(self.tableWidget.clear)
+        self.queries_comboBox.textChanged.connect(self.tableWidget.clear)
 
         self.deleteRecord_pushButton.pressed.connect(self._deleteRecord)
 
@@ -196,11 +204,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 self._conn.rollback()
                 showError("Неверный формат даты\nПример правильного формата: 2001-01-30")
                 return
+
             self._cursor.execute(query)
             self._conn.rollback()
             print(query)
 
     def _visualizeTable(self):
+        if self.buildSummaryChart_pushButton.isEnabled():
+            self.buildSummaryChart_pushButton.setEnabled(False)
+
         try:
             self._cursor.execute("SELECT * FROM %s" % TABLES_DICT[self.tables_comboBox.currentText()])
         except psycopg2.errors.InsufficientPrivilege:
@@ -209,10 +221,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             return
         
         columns_names = [desc[0] for desc in self._cursor.description]
-        self._fillData(columns_names)
+        self.__fillData(columns_names)
 
     def _visualizeQuery(self):
         query_name = self.queries_comboBox.currentText()
+        if "total" in query_name.lower():
+            self.buildSummaryChart_pushButton.setEnabled(True)
+        else:
+            self.buildSummaryChart_pushButton.setEnabled(False)
+            
         try:
             QUERIES[query_name](self._cursor)
         except psycopg2.errors.InsufficientPrivilege:
@@ -221,22 +238,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             return
         
         columns_names = [desc[0] for desc in self._cursor.description]
-        self._fillData(columns_names)
+        self.__fillData(columns_names)
 
-    def _saveToExcel(self):
-        columns_values = [self.tableWidget.horizontalHeaderItem(column).text() for column in range(self.tableWidget.columnCount())]
-        values: List[List[Any]] = []
-        
-        for row in range(self.tableWidget.rowCount()):
-            _inner_values: List[Any] = []
-            for column in range(self.tableWidget.columnCount()):
-                _inner_values.append(self.tableWidget.item(row, column))
-
-            values.append(_inner_values)
-
-        saveDataToExcel(columns_values, values, self.queries_comboBox.currentText())
-
-    def _fillData(self, columns_names: List[str]):
+    def __fillData(self, columns_names: List[str]):
         columns_amount = len(columns_names)
         
         self.tableWidget.setColumnCount(columns_amount)
@@ -251,6 +255,36 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.tableWidget.setItem(row_idx, column_idx, _item)
 
         self.tableWidget.resizeColumnsToContents()
+
+    def _saveToExcel(self):
+        if self.tableWidget.rowCount() == 0:
+            return
+
+        columns_values = [self.tableWidget.horizontalHeaderItem(column).text() for column in range(self.tableWidget.columnCount())]
+        values: List[List[Any]] = []
+        
+        for row in range(self.tableWidget.rowCount()):
+            _inner_values: List[Any] = []
+            for column in range(self.tableWidget.columnCount()):
+                _inner_values.append(self.tableWidget.item(row, column))
+
+            values.append(_inner_values)
+
+        saveDataToExcel(columns_values, values, self.queries_comboBox.currentText())
+
+    def _buildSummaryChart(self):
+        if self.tableWidget.rowCount() == 0:
+            return
+
+        values, labels: List[str] = [], []
+        for column in enumerate(self.tableWidget.columnCount()):
+            try:
+                labels.append(self.tableWidget.item(0, column).text())
+                values.append(int(self.tableWidget.item(1, column).text()))
+            except ValueError:
+                print("Невозможно конвертировать в число %s" % self.tableWidget.item(1, column).text())
+
+        drawPieChart(values, labels, self.queries_comboBox.currentText())
 
     def _deleteRecord(self):
         current_table = TABLES_DICT[self.tables_comboBox.currentText()]
@@ -272,10 +306,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 if __name__ == "__main__":
-    # drawGraph([30, 15, 20, 40, 80, 44, 22, 10, 99, 11, 125, 23, 33], ["First", "Second", "Third", "Fourth", "Fifth", "Sixth",\
-    #      "Seventh", "Eighth", "Nineth", "Tenth", "Eleventh", "Twelveth", "Thirteenth"], "Итоговый запрос")
-    # saveDataToExcel(["first", "second"], [[1,2], [3,4], [5,6], [7,8]], "tmp_report")
-    # exit()
     app = QtWidgets.QApplication([])
     if TESTING_ENABLED:
         widget = MainWindow([], [])
