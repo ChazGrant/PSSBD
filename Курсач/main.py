@@ -139,8 +139,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.addRow_pushButton.pressed.connect(self._addRowToTheTableWidget)
         self.addRecord_pushButton.pressed.connect(self._addRecord)
 
-        self.tables_comboBox.textChanged.connect(self.tableWidget.clear)
-        self.queries_comboBox.textChanged.connect(self.tableWidget.clear)
+        self.tables_comboBox.currentTextChanged.connect(self.__clearTableWidget)
+        self.queries_comboBox.currentTextChanged.connect(self.__clearTableWidget)
 
         self.deleteRecord_pushButton.pressed.connect(self._deleteRecord)
 
@@ -159,6 +159,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         self.window_closed.emit()
         return super().closeEvent(a0)
+
+    def __clearTableWidget(self):
+        self.tableWidget.clear()
+        self.tableWidget.setRowCount(0)
+        self.tableWidget.setColumnCount(0)
 
     def _addRowToTheTableWidget(self):
         current_row_amount = self.tableWidget.rowCount()
@@ -276,14 +281,21 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if self.tableWidget.rowCount() == 0:
             return
 
-        values, labels: List[str] = [], []
-        for column in enumerate(self.tableWidget.columnCount()):
-            try:
-                labels.append(self.tableWidget.item(0, column).text())
-                values.append(int(self.tableWidget.item(1, column).text()))
-            except ValueError:
-                print("Невозможно конвертировать в число %s" % self.tableWidget.item(1, column).text())
+        values, labels = [], []
+        if self.tableWidget.columnCount() > 1:
+            for row in range(self.tableWidget.rowCount()):
+                labels.append(self.tableWidget.item(row, 0).text())
+                values.append(int(self.tableWidget.item(row, 1).text()))
+        else:
+            for column in range(self.tableWidget.columnCount()):
+                try:
+                    labels.append(self.tableWidget.horizontalHeaderItem(column).text())
+                    values.append(int(self.tableWidget.item(0, column).text()))
+                except ValueError:
+                    labels.pop()
 
+        print(values)
+        print(labels)
         drawPieChart(values, labels, self.queries_comboBox.currentText())
 
     def _deleteRecord(self):
