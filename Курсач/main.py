@@ -42,7 +42,15 @@ from main_formUI import Ui_MainWindow
 import psycopg2
 
 from inspect import getmembers, isfunction
-import complex_requests, requests
+import sys
+
+args = sys.argv
+if "--test" in args:
+    TESTING_ENABLED = 1
+    requests, complex_requests = [], []
+else:
+    TESTING_ENABLED = 0
+    import complex_requests, requests
 
 
 QUERIES = dict()
@@ -76,19 +84,17 @@ TABLES_DICT = {
     "Социальные статусы": "social_status"
 }
 
-import plotly
-import plotly.graph_objs as go
-import plotly.express as px
-from plotly.subplots import make_subplots
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 def drawGraph(values: List[int], labels: List[str], title: str) -> None:
-    fig, ax = plt.subplots()
-    ax.pie(values, labels=labels)
-    ax.set_title(title)
-    plt.tight_layout()
+    if not len(values) == len(labels):
+        return "Length should be equal"
+
+    max_index_value = values.index(max(values))
+    get_value = lambda x: np.round(x / 100 * sum(values))
+    plt.pie(values, labels=labels, explode=tuple([0 for _ in values[:max_index_value]]) + tuple([.1]) + tuple([0 for _ in values[max_index_value + 1:]]), autopct=get_value)
+    plt.title(title)
     plt.show()
 
 import openpyxl
@@ -105,7 +111,7 @@ def saveDataToExcel(columns_names: List[str], values: List[List[Any]], report_na
         for column_idx, column in enumerate(row):
             ws.cell(row=row_idx + 2, column=column_idx + 1).value = column
 
-    current_datetime = datetime.datetime.now().strftime("%d.%m.%y")
+    current_datetime = datetime.datetime.now().strftime("%d%m%y%H%M%S")
     wb_name = f"Отчёт по {report_name} {current_datetime}.xlsx"
     wb.save(wb_name)
 
@@ -121,29 +127,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self._new_rows_added = list()
 
-        self.visualiseTable_pushButton.pressed.connect(self._visualizeTable)
+        self.visualizeTable_pushButton.pressed.connect(self._visualizeTable)
         self.visualizeQuery_pushButton.pressed.connect(self._visualizeQuery)
+        self.saveToExcel_pushButton.pressed.connect(self._saveToExcel)
 
         self.addRow_pushButton.pressed.connect(self._addRowToTheTableWidget)
         self.addRecord_pushButton.pressed.connect(self._addRecord)
 
         self.deleteRecord_pushButton.pressed.connect(self._deleteRecord)
-
-        self.tmp()
-
-    def tmp(self):
-        query_name = self.queries_comboBox.currentText()
-        try:
-            QUERIES[query_name](self._cursor)
-        except psycopg2.errors.InsufficientPrivilege:
-            showError("У Вас недостаточно прав для выполнения данного запроса")
-            self._conn.rollback()
-            return
-        
-        columns_names = [desc[0] for desc in self._cursor.description]
-        data = self._cursor.fetchall()
-
-        saveDataToExcel(columns_names, data, self.queries_comboBox.currentText())
 
     def __setComboBoxes(self):
         self.__setTables()
@@ -232,6 +223,19 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         columns_names = [desc[0] for desc in self._cursor.description]
         self._fillData(columns_names)
 
+    def _saveToExcel(self):
+        columns_values = [self.tableWidget.horizontalHeaderItem(column).text() for column in range(self.tableWidget.columnCount())]
+        values: List[List[Any]] = []
+        
+        for row in range(self.tableWidget.rowCount()):
+            _inner_values: List[Any] = []
+            for column in range(self.tableWidget.columnCount()):
+                _inner_values.append(self.tableWidget.item(row, column))
+
+            values.append(_inner_values)
+
+        saveDataToExcel(columns_values, values, self.queries_comboBox.currentText())
+
     def _fillData(self, columns_names: List[str]):
         columns_amount = len(columns_names)
         
@@ -268,9 +272,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 if __name__ == "__main__":
-    # drawGraph([30, 15, 20], ["First", "Second", "Third"], "Итоговый запрос")
+    # drawGraph([30, 15, 20, 40, 80, 44, 22, 10, 99, 11, 125, 23, 33], ["First", "Second", "Third", "Fourth", "Fifth", "Sixth",\
+    #      "Seventh", "Eighth", "Nineth", "Tenth", "Eleventh", "Twelveth", "Thirteenth"], "Итоговый запрос")
+    # saveDataToExcel(["first", "second"], [[1,2], [3,4], [5,6], [7,8]], "tmp_report")
     # exit()
     app = QtWidgets.QApplication([])
-    widget = MainWindow()
+    if TESTING_ENABLED:
+        widget = MainWindow([], [])
+    else:
+        widget = MainWindow()
     widget.show()
     app.exec_()
