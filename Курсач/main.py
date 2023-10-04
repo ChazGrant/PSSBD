@@ -133,17 +133,21 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.visualizeQuery_pushButton.pressed.connect(self._visualizeQuery)
         self.saveToExcel_pushButton.pressed.connect(self._saveToExcel)
         self.buildSummaryChart_pushButton.pressed.connect(self._buildSummaryChart)
-        self.findByCriteria_pushButton.pressed.connect(self._findByCriteria)
+        self.findByCriteria_pushButton.pressed.connect(self._visualizeTable)
 
         self.buildSummaryChart_pushButton.setEnabled(False)
 
         self.addRow_pushButton.pressed.connect(self._addRowToTheTableWidget)
         self.addRecord_pushButton.pressed.connect(self._addRecord)
 
-        self.tables_comboBox.currentTextChanged.connect(self.__clearTableWidget)
+        self.tables_comboBox.currentTextChanged.connect(self._tablesChangedEvent)
         self.queries_comboBox.currentTextChanged.connect(self.__clearTableWidget)
+        
+        self.enableSorting_checkBox.stateChanged.connect(self._updateSortingButtonsState)
 
         self.deleteRecord_pushButton.pressed.connect(self._deleteRecord)
+
+        self.__fillColumns()
 
     def __setComboBoxes(self):
         self.__setTables()
@@ -166,21 +170,36 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.tableWidget.setRowCount(0)
         self.tableWidget.setColumnCount(0)
 
+    def _tablesChangedEvent(self):
+        self.__fillColumns()
+        self.__clearTableWidget()
+
     @property
     def _selectedColumn(self) -> str:
-        selected_column = self.columns_comboBox.currentText()
-        return TABLES_DICT[selected_column]
+        return self.columns_comboBox.currentText()
+
+    @property
+    def _selectedTable(self) -> str:
+        return TABLES_DICT[self.tables_comboBox.currentText()]
+
+    @property
+    def _criteriaPart(self) -> str:
+        if len(self.columnCriteria_textEdit.toPlainText()):
+            criteria_part = "WHERE {} = '{}' ".format(self._selectedColumn,\
+                                                     self.columnCriteria_textEdit.toPlainText())
+            return criteria_part
+        
+        return ""
 
     @property
     def _sortingPart(self) -> str:
-        
         sorting_part = ""
         if self.enableSorting_checkBox.isChecked():
             sorting_part = "ORDER BY " + self._selectedColumn
             if self.sortByAscending_radioButton.isChecked():
-                sorting_part += " ASCENDING"
+                sorting_part += " ASC"
             else:
-                sorting_part += " DESCENDING"
+                sorting_part += " DESC"
 
         return sorting_part
 
@@ -236,14 +255,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if self.buildSummaryChart_pushButton.isEnabled():
             self.buildSummaryChart_pushButton.setEnabled(False)
 
-        sorting_part = self._sortingPart
-        criteria_part = self._criteriaPart
-
         try:
-            self._cursor.execute("SELECT * FROM %s %s %s" % (self._selectedColumn, \
-                criteria_part, sorting_part))
+            self._cursor.execute("SELECT * FROM %s %s %s" % (self._selectedTable, \
+                self._criteriaPart, self._sortingPart))
         except psycopg2.errors.InsufficientPrivilege:
             showError("У Вас недостаточно прав для работы с данной таблицей")
+            self._conn.rollback()
+            return
+        except psycopg2.errors.InvalidTextRepresentation:
+            showError("Ошибка в формате данных")
             self._conn.rollback()
             return
         
@@ -266,6 +286,19 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         
         columns_names = [desc[0] for desc in self._cursor.description]
         self.__fillData(columns_names)
+
+    def _updateSortingButtonsState(self):
+        self.sortByAscending_radioButton.setEnabled(self.enableSorting_checkBox.isChecked())
+        self.sortByDescending_radioButton.setEnabled(self.enableSorting_checkBox.isChecked())
+
+    def __fillColumns(self) -> None:
+        selected_table = TABLES_DICT[self.tables_comboBox.currentText()]
+        self._cursor.execute("SELECT * FROM %s LIMIT 0;" % selected_table)
+        columns_names = [desc[0] for desc in self._cursor.description]
+        
+        self.columns_comboBox.clear()
+        for column_name in columns_names:
+            self.columns_comboBox.addItem(column_name)
 
     def __fillData(self, columns_names: List[str]):
         columns_amount = len(columns_names)
@@ -316,8 +349,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 except ValueError:
                     labels.pop()
 
-        print(values)
-        print(labels)
         drawPieChart(values, labels, self.queries_comboBox.currentText())
 
     def _deleteRecord(self):
