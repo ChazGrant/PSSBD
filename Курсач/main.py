@@ -36,7 +36,7 @@
 # просматривать таблицу больные)
 
 
-from typing import List, Any, Dict
+from typing import List, Any, Union
 from PyQt5 import QtGui, QtWidgets, QtCore
 from main_formUI import Ui_MainWindow
 import psycopg2
@@ -90,9 +90,9 @@ TABLES_DICT = {
     "Социальные статусы": "social_status"
 }
 
-def drawPieChart(values: List[int], labels: List[str], title: str) -> None:
+def drawPieChart(values: List[int], labels: List[str], title: str) -> Union[str, None]:
     if not len(values) == len(labels):
-        return "Length should be equal"
+        return "Значения и метки должны быть одинаковой длины"
 
     max_index_value = values.index(max(values))
     get_value = lambda x: np_round(x / 100 * sum(values))
@@ -124,7 +124,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setupUi(self)
 
         self.__setComboBoxes()
-        self._cursor = cursor
+        self._cursor = cursor 
         self._conn = conn
 
         self._new_rows_added = list()
@@ -133,6 +133,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.visualizeQuery_pushButton.pressed.connect(self._visualizeQuery)
         self.saveToExcel_pushButton.pressed.connect(self._saveToExcel)
         self.buildSummaryChart_pushButton.pressed.connect(self._buildSummaryChart)
+        self.findByCriteria_pushButton.pressed.connect(self._findByCriteria)
 
         self.buildSummaryChart_pushButton.setEnabled(False)
 
@@ -164,6 +165,24 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.tableWidget.clear()
         self.tableWidget.setRowCount(0)
         self.tableWidget.setColumnCount(0)
+
+    @property
+    def _selectedColumn(self) -> str:
+        selected_column = self.columns_comboBox.currentText()
+        return TABLES_DICT[selected_column]
+
+    @property
+    def _sortingPart(self) -> str:
+        
+        sorting_part = ""
+        if self.enableSorting_checkBox.isChecked():
+            sorting_part = "ORDER BY " + self._selectedColumn
+            if self.sortByAscending_radioButton.isChecked():
+                sorting_part += " ASCENDING"
+            else:
+                sorting_part += " DESCENDING"
+
+        return sorting_part
 
     def _addRowToTheTableWidget(self):
         current_row_amount = self.tableWidget.rowCount()
@@ -212,14 +231,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
             self._cursor.execute(query)
             self._conn.rollback()
-            print(query)
 
     def _visualizeTable(self):
         if self.buildSummaryChart_pushButton.isEnabled():
             self.buildSummaryChart_pushButton.setEnabled(False)
 
+        sorting_part = self._sortingPart
+        criteria_part = self._criteriaPart
+
         try:
-            self._cursor.execute("SELECT * FROM %s" % TABLES_DICT[self.tables_comboBox.currentText()])
+            self._cursor.execute("SELECT * FROM %s %s %s" % (self._selectedColumn, \
+                criteria_part, sorting_part))
         except psycopg2.errors.InsufficientPrivilege:
             showError("У Вас недостаточно прав для работы с данной таблицей")
             self._conn.rollback()

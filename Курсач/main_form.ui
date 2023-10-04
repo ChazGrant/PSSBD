@@ -123,7 +123,7 @@
      <rect>
       <x>0</x>
       <y>10</y>
-      <width>1391</width>
+      <width>1381</width>
       <height>801</height>
      </rect>
     </property>
@@ -195,77 +195,112 @@
      <string>Построить итоговую диаграмму</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="sortByDescending_pushButton">
+   <widget class="QGroupBox" name="groupBox">
     <property name="geometry">
      <rect>
-      <x>1400</x>
-      <y>430</y>
-      <width>201</width>
-      <height>31</height>
+      <x>1390</x>
+      <y>290</y>
+      <width>211</width>
+      <height>241</height>
      </rect>
     </property>
-    <property name="text">
-     <string>Отсортировать по убыванию</string>
+    <property name="title">
+     <string>Сортировка и фильтрация</string>
     </property>
-   </widget>
-   <widget class="QPushButton" name="sortByAscending_pushButton">
-    <property name="geometry">
-     <rect>
-      <x>1400</x>
-      <y>390</y>
-      <width>201</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Отсортировать по возрастанию</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="findByCriteria_pushButton">
-    <property name="geometry">
-     <rect>
-      <x>1400</x>
-      <y>540</y>
-      <width>201</width>
-      <height>34</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Поиск по критерию</string>
-    </property>
-   </widget>
-   <widget class="QComboBox" name="columns_comboBox">
-    <property name="geometry">
-     <rect>
-      <x>1400</x>
-      <y>360</y>
-      <width>201</width>
-      <height>22</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_3">
-    <property name="geometry">
-     <rect>
-      <x>1400</x>
-      <y>340</y>
-      <width>201</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Выберите поле: </string>
-    </property>
-   </widget>
-   <widget class="QTextEdit" name="columnCriteria_textEdit">
-    <property name="geometry">
-     <rect>
-      <x>1400</x>
-      <y>500</y>
-      <width>201</width>
-      <height>31</height>
-     </rect>
-    </property>
+    <widget class="QTextEdit" name="columnCriteria_textEdit">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>150</y>
+       <width>181</width>
+       <height>31</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="columns_comboBox">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>40</y>
+       <width>181</width>
+       <height>22</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="findByCriteria_pushButton">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>190</y>
+       <width>181</width>
+       <height>34</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Поиск по критерию</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_3">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>20</y>
+       <width>191</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Выберите поле: </string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="enableSorting_checkBox">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>70</y>
+       <width>171</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Сортировка</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="sortByAscending_radioButton">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>100</y>
+       <width>191</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Отсортировать по возрастанию</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="sortByDescending_radioButton">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>120</y>
+       <width>191</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Отсортировать по убыванию</string>
+     </property>
+    </widget>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
