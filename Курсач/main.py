@@ -90,6 +90,12 @@ TABLES_DICT = {
     "Социальные статусы": "social_status"
 }
 
+CHILDREN_TABLES = {
+    "sick_people": ["social_status"],
+    "call_requests": ["sick_people", "call_reason"],
+    "procedure_application": ["procedure", "call_requests"]
+}
+
 def drawPieChart(values: List[int], labels: List[str], title: str) -> Union[str, None]:
     if not len(values) == len(labels):
         return "Значения и метки должны быть одинаковой длины"
@@ -128,6 +134,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self._conn = conn
 
         self._new_rows_added = list()
+        self._updatedRecordsInfo = dict()
 
         self.visualizeTable_pushButton.pressed.connect(self._visualizeTable)
         self.visualizeQuery_pushButton.pressed.connect(self._visualizeQuery)
@@ -139,13 +146,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.addRow_pushButton.pressed.connect(self._addRowToTheTableWidget)
         self.addRecord_pushButton.pressed.connect(self._addRecord)
+        self.updateRecord_pushButton.pressed.connect(self._updateRecord)
+        self.deleteRecord_pushButton.pressed.connect(self._deleteRecord)
 
         self.tables_comboBox.currentTextChanged.connect(self._tablesChangedEvent)
         self.queries_comboBox.currentTextChanged.connect(self.__clearTableWidget)
         
-        self.enableSorting_checkBox.stateChanged.connect(self._updateSortingButtonsState)
+        self.editChildTable_pushButton.pressed.connect(self._openChoiceDialog)
 
-        self.deleteRecord_pushButton.pressed.connect(self._deleteRecord)
+        self.enableSorting_checkBox.stateChanged.connect(self._updateSortingButtonsState)
 
         self.__fillColumns()
 
@@ -203,6 +212,22 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         return sorting_part
 
+    def _openChoiceDialog(self):
+        try:
+            selected_table_name = TABLES_DICT[self.tables_comboBox.currentText()]
+        except KeyError:
+            return showError("Для данной таблицы нет дочерних таблиц")
+        
+        child_table_names = CHILDREN_TABLES[selected_table_name]
+        if len(child_table_names) > 1:
+
+            child_table_name = ""
+        else:
+            child_table_name = child_table_names[0]
+
+    def _openCompountForm(self, child_table_name: str):
+        self.widget = ChildTableEditor(child_table_name)
+
     def _addRowToTheTableWidget(self):
         current_row_amount = self.tableWidget.rowCount()
         if current_row_amount == 0:
@@ -250,6 +275,61 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
             self._cursor.execute(query)
             self._conn.rollback()
+
+    def _addCellToArray(self):
+        selected_item = self.tableWidget.selectedItems()[0]
+        new_value = selected_item.text()
+
+        seleted_row = self.tableWidget.row(selected_item)
+        seleted_column = self.tableWidget.column(selected_item)
+
+        selected_column_name = self.tableWidget.horizontalHeaderItem(seleted_column).text()
+        idx_column_value = self.tableWidget.item(seleted_row, 0).text()
+        
+        if idx_column_value not in self._updatedRecordsInfo.keys():
+            self._updatedRecordsInfo[idx_column_value] = {selected_column_name: new_value}
+        else:
+            self._updatedRecordsInfo[idx_column_value][selected_column_name] = new_value
+
+    def _updateRecord(self):
+        queries = []
+        table_name = TABLES_DICT[self.tables_comboBox.currentText()]
+        for main_column_idx, items_dict in self._updatedRecordsInfo.items():
+            main_column_name = self.tableWidget.horizontalHeaderItem(0).text()
+            new_columns_values = []
+            for column_name, new_value in items_dict.items():
+                new_columns_values.append("{} = '{}'".format(column_name, new_value))
+
+            query = "UPDATE TABLE {} SET {} WHERE {} = {}".format(table_name, 
+                        ", ".join(item for item in new_columns_values),
+                        main_column_name,
+                        main_column_idx)
+            queries.append(query)
+
+        for query in queries:
+            try:
+                self._cursor.execute(query)
+            except Exception as e:
+                showError(str(e))
+                self._conn.rollback()
+
+    def _deleteRecord(self):
+        current_table = TABLES_DICT[self.tables_comboBox.currentText()]
+        selected_row = self.tableWidget.currentRow()
+        unique_idx = self.tableWidget.item(selected_row, 0).text()
+        
+        self._cursor.execute("SELECT * FROM %s LIMIT 0" % (current_table, ))
+        column_name = self._cursor.description[0][0]
+
+        query = "DELETE FROM %s WHERE %s = %s" % (current_table, column_name, unique_idx)
+
+        try:
+            self._cursor.execute(query)
+            self._conn.rollback()
+        except psycopg2.errors.InsufficientPrivilege:
+            showError("У Вас недостаточно прав для удаленя данных")
+            self._conn.rollback()
+            return
 
     def _visualizeTable(self):
         if self.buildSummaryChart_pushButton.isEnabled():
@@ -301,6 +381,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.columns_comboBox.addItem(column_name)
 
     def __fillData(self, columns_names: List[str]):
+        try:
+            self.tableWidget.cellChanged.disconnect(self._addCellToArray)
+        except TypeError:
+            pass
+
         columns_amount = len(columns_names)
         
         self.tableWidget.setColumnCount(columns_amount)
@@ -311,10 +396,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         for row_idx, row in enumerate(data):
             for column_idx, item in enumerate(row):
                 _item = QtWidgets.QTableWidgetItem(str(item))
-                _item.setFlags(QtCore.Qt.ItemIsEnabled)
                 self.tableWidget.setItem(row_idx, column_idx, _item)
 
         self.tableWidget.resizeColumnsToContents()
+        self.tableWidget.cellChanged.connect(self._addCellToArray)
 
     def _saveToExcel(self):
         if self.tableWidget.rowCount() == 0:
@@ -350,24 +435,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     labels.pop()
 
         drawPieChart(values, labels, self.queries_comboBox.currentText())
-
-    def _deleteRecord(self):
-        current_table = TABLES_DICT[self.tables_comboBox.currentText()]
-        selected_row = self.tableWidget.currentRow()
-        unique_idx = self.tableWidget.item(selected_row, 0).text()
-        
-        self._cursor.execute("SELECT * FROM %s LIMIT 0" % (current_table, ))
-        column_name = self._cursor.description[0][0]
-
-        query = "DELETE FROM %s WHERE %s = %s" % (current_table, column_name, unique_idx)
-
-        try:
-            self._cursor.execute(query)
-            self._conn.rollback()
-        except psycopg2.errors.InsufficientPrivilege:
-            showError("У Вас недостаточно прав для удаленя данных")
-            self._conn.rollback()
-            return
 
 
 if __name__ == "__main__":
