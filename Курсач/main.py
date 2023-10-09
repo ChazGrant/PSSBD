@@ -50,6 +50,8 @@ import matplotlib.pyplot as plt
 import openpyxl
 import datetime
 
+from CompoundForm import CompoundForm
+
 
 if "--test" in sys.argv:
     TESTING_ENABLED = 1
@@ -152,7 +154,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.tables_comboBox.currentTextChanged.connect(self._tablesChangedEvent)
         self.queries_comboBox.currentTextChanged.connect(self.__clearTableWidget)
         
-        self.editChildTable_pushButton.pressed.connect(self._openChoiceDialog)
+        self.editChildTable_pushButton.pressed.connect(self._prepareCompoundForm)
 
         self.enableSorting_checkBox.stateChanged.connect(self._updateSortingButtonsState)
 
@@ -212,21 +214,41 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         return sorting_part
 
-    def _openChoiceDialog(self):
-        try:
-            selected_table_name = TABLES_DICT[self.tables_comboBox.currentText()]
-        except KeyError:
-            return showError("Для данной таблицы нет дочерних таблиц")
-        
-        child_table_names = CHILDREN_TABLES[selected_table_name]
-        if len(child_table_names) > 1:
+    def _prepareCompoundForm(self):
+        selected_table: str = TABLES_DICT[self.tables_comboBox.currentText()]
+        self._cursor.execute("SELECT * FROM %s" % selected_table)
 
-            child_table_name = ""
-        else:
-            child_table_name = child_table_names[0]
+        main_table_columns_names: List[str] = [desc[0] for desc in self._cursor.description]
+        main_table_columns_values: List[Any] = self._cursor.fetchall()
 
-    def _openCompountForm(self, child_table_name: str):
-        self.widget = ChildTableEditor(child_table_name)
+        child_table_names = CHILDREN_TABLES[selected_table]
+        child_tables_columns_names: List[str] = []
+        child_tables_columns_values: List[str] = []
+        for child_table_name in child_table_names:
+            self._cursor.execute("SELECT * FROM %s" % child_table_name)
+            child_tables_columns_names.append([desc[0] for desc in self._cursor.description])
+            child_tables_columns_values.append(self._cursor.fetchall())
+
+        self._openCompoundForm(selected_table,
+                               main_table_columns_names, 
+                               main_table_columns_values, 
+                               child_table_names,
+                               child_tables_columns_names, 
+                               child_tables_columns_values)
+
+    def _openCompoundForm(self,
+                main_table_name: str,
+                main_table_columns_names: List[str], 
+                main_table_column_values: List[Any], 
+                child_table_names: List[str],
+                child_tables_columns_names: List[str], 
+                child_tables_column_values: List[Any]):
+        self.widget = CompoundForm(main_table_name,
+                                   main_table_columns_names, 
+                                   main_table_column_values, 
+                                   child_table_names, 
+                                   child_tables_columns_names, 
+                                   child_tables_column_values)
 
     def _addRowToTheTableWidget(self):
         current_row_amount = self.tableWidget.rowCount()
@@ -240,8 +262,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         columns_names = []
         table_name = TABLES_DICT[self.tables_comboBox.currentText()]
         for column in range(self.tableWidget.columnCount()):
-            columns_names.append(self.tableWidget.horizontalHeaderItem(column).\
-                                 text())
+            columns_names.append(self.tableWidget.horizontalHeaderItem(column).text())
 
         from datetime import datetime
         for row_idx in self._new_rows_added:
@@ -252,7 +273,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     _item_value = self.tableWidget.item(row_idx - 1, column_idx).text()
                     try:
                         _item_value = datetime.strptime(_item_value, "%Y-%m-%d")
-                        print(_item_value)
                     except ValueError:
                         pass
                     row.append(_item_value)
@@ -270,8 +290,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 self._cursor.execute(query)
             except psycopg2.errors.InvalidDatetimeFormat:
                 self._conn.rollback()
-                showError("Неверный формат даты\nПример правильного формата: 2001-01-30")
-                return
+                return showError("Неверный формат даты\nПример правильного формата: 2001-01-30")
 
             self._cursor.execute(query)
             self._conn.rollback()

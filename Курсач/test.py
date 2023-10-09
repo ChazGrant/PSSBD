@@ -16,6 +16,12 @@ CONFIG = {
 # cursor.execute("call GetSickPeopleBySocialStatus('пенсионер')")
 # print(cursor.fetchall())
 
-tmp_string = "UPDATE TABLE {} SET {} = {}".format("first", "second", "third")
+_dict = {
+            "main": [],
+            "child": []
+        }
 
-print(tmp_string)
+_dict["main"].append(14)
+_dict["child"].append(14)
+
+print(_dict)
