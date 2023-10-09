@@ -214,6 +214,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         return sorting_part
 
+    def __enableDMLButtons(self, state: bool):
+        self.addRecord_pushButton.setEnabled(state)
+        self.addRow_pushButton.setEnabled(state)
+        self.deleteRecord_pushButton.setEnabled(state)
+        self.updateRecord_pushButton.setEnabled(state)
+
     def _prepareCompoundForm(self):
         selected_table: str = TABLES_DICT[self.tables_comboBox.currentText()]
         self._cursor.execute("SELECT * FROM %s" % selected_table)
@@ -351,6 +357,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             return
 
     def _visualizeTable(self):
+        self.__enableDMLButtons(True)
         if self.buildSummaryChart_pushButton.isEnabled():
             self.buildSummaryChart_pushButton.setEnabled(False)
 
@@ -371,6 +378,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def _visualizeQuery(self):
         query_name = self.queries_comboBox.currentText()
+        if not query_name == "symmetricInnerRequestWithoutConditionTwo":
+            self.__enableDMLButtons(False)
+
         if "total" in query_name.lower():
             self.buildSummaryChart_pushButton.setEnabled(True)
         else:
