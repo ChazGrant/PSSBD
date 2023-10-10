@@ -3,10 +3,10 @@ from PyQt5.QtCore import pyqtSignal
 from compoundForm_formUI import Ui_Form
 import psycopg2
 
-from typing import List, Any, Dict
+from typing import List, Any, Dict, Union
 
 
-def showError(text: str):
+def showError(text: str) -> None:
     msg = QtWidgets.QMessageBox()
     msg.setIcon(QtWidgets.QMessageBox.Critical)
     msg.setText(text)
@@ -23,13 +23,13 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
                 child_table_names: List[str],
                 child_table_columns_names: List[List[str]], 
                 child_tables_column_values: List[Any],
-                cursor,
-                conn):
+                cursor: psycopg2.cursor,
+                conn: psycopg2.connection) -> None:
         super(CompoundForm, self).__init__()
         self.setupUi(self)
 
-        self._cursor: psycopg2.cursor = cursor
-        self._conn: psycopg2.connection = conn
+        self._cursor = cursor
+        self._conn = conn
         self._main_table_name = main_table_name
 
         self._new_rows_added: List[List[int]] = [[], []]
@@ -69,21 +69,21 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
             self.childTable_tableWidget.setRowCount(next_row_count)
             self._new_rows_added[1].append(next_row_count)
 
-    def _addRecord(self):
+    def _addRecord(self) -> None:
         self._addRecordToTheMainTable()
         self._addRecordToTheChildTable()
 
-    def _addRecordToTheMainTable(self):
+    def _addRecordToTheMainTable(self) -> None:
         new_rows_added = self._new_rows_added[0]
 
-        columns_names = []
+        columns_names: List[str] = []
         table_name = self._main_table_name
         for column in range(self.mainTable_tableWidget.columnCount()):
             columns_names.append(self.mainTable_tableWidget.horizontalHeaderItem(column).text())
 
         from datetime import datetime
         for row_idx in new_rows_added:
-            row = []
+            row: List[Union[datetime, str]] = []
             for column_idx in range(1, self.mainTable_tableWidget.columnCount()):
                 error_occured = False
                 try:
@@ -112,17 +112,17 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
             self._cursor.execute(query)
             self._conn.rollback()
 
-    def _addRecordToTheChildTable(self):
+    def _addRecordToTheChildTable(self) -> None:
         new_rows_added = self._new_rows_added[1]
 
-        columns_names = []
+        columns_names: List[str] = []
         table_name = self._main_table_name
         for column in range(self.childTable_tableWidget.columnCount()):
             columns_names.append(self.childTable_tableWidget.horizontalHeaderItem(column).text())
 
         from datetime import datetime
         for row_idx in new_rows_added:
-            row = []
+            row: List[Union[datetime, str]] = []
             for column_idx in range(1, self.childTable_tableWidget.columnCount()):
                 error_occured = False
                 try:
@@ -151,13 +151,13 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
             self._cursor.execute(query)
             self._conn.rollback()
 
-    def _addChildCellToArray(self):
+    def _addChildCellToArray(self) -> None:
         self._addCellToAray(self.childTable_tableWidget, 0)
     
-    def _addMainCellToArray(self):
+    def _addMainCellToArray(self) -> None:
         self._addCellToAray(self.mainTable_tableWidget, 1)
 
-    def _addCellToAray(self, table_widget: QtWidgets.QTableWidget, table_idx: int):
+    def _addCellToAray(self, table_widget: QtWidgets.QTableWidget, table_idx: int) -> None:
         selected_item = table_widget.selectedItems()[0]
         new_value = selected_item.text()
 
@@ -172,8 +172,8 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
         else:
             self._updatedRecordsInfo[table_idx][idx_column_value][selected_column_name] = new_value
 
-    def _updateRecord(self):
-        queries = []
+    def _updateRecord(self) -> None:
+        queries: List[str] = []
         tables_widget = [self.mainTable_tableWidget, self.childTable_tableWidget]
         tables_names = [self._main_table_name, self.childTables_comboBox.currentText()]
 
@@ -222,6 +222,7 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
             self.childTable_tableWidget.cellChanged.disconnect(self._addChildCellToArray)
         except TypeError:
             pass
+
         selected_child_table = self.childTables_comboBox.currentText()
         child_table_idx = self._child_table_names.index(selected_child_table)
 

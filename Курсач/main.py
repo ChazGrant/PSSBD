@@ -36,7 +36,7 @@
 # просматривать таблицу больные)
 
 
-from typing import List, Any, Union
+from typing import List, Any, Union, Dict
 from PyQt5 import QtGui, QtWidgets, QtCore
 from main_formUI import Ui_MainWindow
 import psycopg2
@@ -61,21 +61,21 @@ else:
     import complex_requests, requests
 
 
-QUERIES = dict()
+QUERIES: Dict[str, function] = dict()
 for function_name, function in getmembers(requests, isfunction):
     QUERIES[function_name] = function
 
 for function_name, function in getmembers(complex_requests, isfunction):
     QUERIES[function_name] = function
 
-def showMessage(text: str):
+def showMessage(text: str) -> None:
     msg = QtWidgets.QMessageBox()
     msg.setIcon(QtWidgets.QMessageBox.Information)
     msg.setText(text)
     msg.setWindowTitle("Info")
     msg.exec_()
 
-def showError(text: str):
+def showError(text: str) -> None:
     msg = QtWidgets.QMessageBox()
     msg.setIcon(QtWidgets.QMessageBox.Critical)
     msg.setText(text)
@@ -127,7 +127,7 @@ def saveDataToExcel(columns_names: List[str], values: List[List[Any]], report_na
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     window_closed = QtCore.pyqtSignal()
-    def __init__(self, cursor, conn):
+    def __init__(self, cursor: psycopg2.cursor, conn: psycopg2.connection) -> None:
         super(MainWindow, self).__init__()
         self.setupUi(self)
 
@@ -135,8 +135,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self._cursor = cursor 
         self._conn = conn
 
-        self._new_rows_added = list()
-        self._updatedRecordsInfo = dict()
+        self._new_rows_added: List[int] = list()
+        self._updatedRecordsInfo: Dict[str, Dict[str, str]] = dict()
 
         self.visualizeTable_pushButton.pressed.connect(self._visualizeTable)
         self.visualizeQuery_pushButton.pressed.connect(self._visualizeQuery)
@@ -160,15 +160,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.__fillColumns()
 
-    def __setComboBoxes(self):
+    def __setComboBoxes(self) -> None:
         self.__setTables()
         self.__setQueries()
 
-    def __setTables(self):
+    def __setTables(self) -> None:
         for table in TABLES_DICT.keys():
             self.tables_comboBox.addItem(table)
 
-    def __setQueries(self):
+    def __setQueries(self) -> None:
         for query in QUERIES.keys():
             self.queries_comboBox.addItem(query)
 
@@ -176,12 +176,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.window_closed.emit()
         return super().closeEvent(a0)
 
-    def __clearTableWidget(self):
+    def __clearTableWidget(self) -> None:
         self.tableWidget.clear()
         self.tableWidget.setRowCount(0)
         self.tableWidget.setColumnCount(0)
 
-    def _tablesChangedEvent(self):
+    def _tablesChangedEvent(self) -> None:
         self.__fillColumns()
         self.__clearTableWidget()
 
@@ -214,14 +214,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         return sorting_part
 
-    def __enableDMLButtons(self, state: bool):
+    def __enableDMLButtons(self, state: bool) -> None:
         self.addRecord_pushButton.setEnabled(state)
         self.addRow_pushButton.setEnabled(state)
         self.deleteRecord_pushButton.setEnabled(state)
         self.updateRecord_pushButton.setEnabled(state)
 
     def _prepareCompoundForm(self):
-        selected_table: str = TABLES_DICT[self.tables_comboBox.currentText()]
+        selected_table = TABLES_DICT[self.tables_comboBox.currentText()]
         self._cursor.execute("SELECT * FROM %s" % selected_table)
 
         main_table_columns_names: List[str] = [desc[0] for desc in self._cursor.description]
@@ -248,7 +248,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 main_table_column_values: List[Any], 
                 child_table_names: List[str],
                 child_tables_columns_names: List[str], 
-                child_tables_column_values: List[Any]):
+                child_tables_column_values: List[Any]) -> None:
         self.widget = CompoundForm(main_table_name,
                                    main_table_columns_names, 
                                    main_table_column_values, 
@@ -256,7 +256,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                                    child_tables_columns_names, 
                                    child_tables_column_values)
 
-    def _addRowToTheTableWidget(self):
+    def _addRowToTheTableWidget(self) -> None:
         current_row_amount = self.tableWidget.rowCount()
         if current_row_amount == 0:
             return
@@ -264,8 +264,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.tableWidget.setRowCount(current_row_amount + 1)
         self._new_rows_added.append(current_row_amount + 1)
 
-    def _addRecord(self):
-        columns_names = []
+    def _addRecord(self) -> None:
+        columns_names: List[str] = []
         table_name = TABLES_DICT[self.tables_comboBox.currentText()]
         for column in range(self.tableWidget.columnCount()):
             columns_names.append(self.tableWidget.horizontalHeaderItem(column).text())
@@ -301,7 +301,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self._cursor.execute(query)
             self._conn.rollback()
 
-    def _addCellToArray(self):
+    def _addCellToArray(self) -> None:
         selected_item = self.tableWidget.selectedItems()[0]
         new_value = selected_item.text()
 
@@ -316,7 +316,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         else:
             self._updatedRecordsInfo[idx_column_value][selected_column_name] = new_value
 
-    def _updateRecord(self):
+    def _updateRecord(self) -> None:
         queries = []
         table_name = TABLES_DICT[self.tables_comboBox.currentText()]
         for main_column_idx, items_dict in self._updatedRecordsInfo.items():
@@ -338,7 +338,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 showError(str(e))
                 self._conn.rollback()
 
-    def _deleteRecord(self):
+    def _deleteRecord(self) -> None:
         current_table = TABLES_DICT[self.tables_comboBox.currentText()]
         selected_row = self.tableWidget.currentRow()
         unique_idx = self.tableWidget.item(selected_row, 0).text()
@@ -352,11 +352,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self._cursor.execute(query)
             self._conn.rollback()
         except psycopg2.errors.InsufficientPrivilege:
-            showError("У Вас недостаточно прав для удаленя данных")
             self._conn.rollback()
-            return
+            return showError("У Вас недостаточно прав для удаленя данных")
 
-    def _visualizeTable(self):
+    def _visualizeTable(self) -> None:
         self.__enableDMLButtons(True)
         if self.buildSummaryChart_pushButton.isEnabled():
             self.buildSummaryChart_pushButton.setEnabled(False)
@@ -369,14 +368,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self._conn.rollback()
             return
         except psycopg2.errors.InvalidTextRepresentation:
-            showError("Ошибка в формате данных")
             self._conn.rollback()
-            return
+            return showError("Ошибка в формате данных")
         
         columns_names = [desc[0] for desc in self._cursor.description]
         self.__fillData(columns_names)
 
-    def _visualizeQuery(self):
+    def _visualizeQuery(self) -> None:
         query_name = self.queries_comboBox.currentText()
         if not query_name == "symmetricInnerRequestWithoutConditionTwo":
             self.__enableDMLButtons(False)
@@ -389,27 +387,26 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         try:
             QUERIES[query_name](self._cursor)
         except psycopg2.errors.InsufficientPrivilege:
-            showError("У Вас недостаточно прав для выполнения данного запроса")
             self._conn.rollback()
-            return
+            return showError("У Вас недостаточно прав для выполнения данного запроса")
         
         columns_names = [desc[0] for desc in self._cursor.description]
         self.__fillData(columns_names)
 
-    def _updateSortingButtonsState(self):
+    def _updateSortingButtonsState(self) -> None:
         self.sortByAscending_radioButton.setEnabled(self.enableSorting_checkBox.isChecked())
         self.sortByDescending_radioButton.setEnabled(self.enableSorting_checkBox.isChecked())
 
     def __fillColumns(self) -> None:
         selected_table = TABLES_DICT[self.tables_comboBox.currentText()]
         self._cursor.execute("SELECT * FROM %s LIMIT 0;" % selected_table)
-        columns_names = [desc[0] for desc in self._cursor.description]
+        columns_names: List[str] = [desc[0] for desc in self._cursor.description]
         
         self.columns_comboBox.clear()
         for column_name in columns_names:
             self.columns_comboBox.addItem(column_name)
 
-    def __fillData(self, columns_names: List[str]):
+    def __fillData(self, columns_names: List[str]) -> None:
         try:
             self.tableWidget.cellChanged.disconnect(self._addCellToArray)
         except TypeError:
@@ -430,11 +427,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.tableWidget.resizeColumnsToContents()
         self.tableWidget.cellChanged.connect(self._addCellToArray)
 
-    def _saveToExcel(self):
+    def _saveToExcel(self) -> None:
         if self.tableWidget.rowCount() == 0:
             return
 
-        columns_values = [self.tableWidget.horizontalHeaderItem(column).text() for column in range(self.tableWidget.columnCount())]
+        columns_values = [self.tableWidget.horizontalHeaderItem(column).text() \
+            for column in range(self.tableWidget.columnCount())]
         values: List[List[Any]] = []
         
         for row in range(self.tableWidget.rowCount()):
@@ -446,11 +444,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         saveDataToExcel(columns_values, values, self.queries_comboBox.currentText())
 
-    def _buildSummaryChart(self):
+    def _buildSummaryChart(self) -> None:
         if self.tableWidget.rowCount() == 0:
             return
 
-        values, labels = [], []
+        values: List[str] = []
+        labels: List[str] = [] 
         if self.tableWidget.columnCount() > 1:
             for row in range(self.tableWidget.rowCount()):
                 labels.append(self.tableWidget.item(row, 0).text())
