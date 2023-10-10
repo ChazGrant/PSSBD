@@ -23,8 +23,8 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
                 child_table_names: List[str],
                 child_table_columns_names: List[List[str]], 
                 child_tables_column_values: List[Any],
-                cursor: psycopg2.cursor,
-                conn: psycopg2.connection) -> None:
+                cursor,
+                conn) -> None:
         super(CompoundForm, self).__init__()
         self.setupUi(self)
 
@@ -33,12 +33,10 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
         self._main_table_name = main_table_name
 
         self._new_rows_added: List[List[int]] = [[], []]
-        self._updatedRecordsInfo: List[Dict[int, Dict[str, str]]] = [
-            {0: {}}, 
-            {1: {}}
-        ]
-        
-        self.childTables_comboBox.currentTextChanged.connect(self._fillChildTable)
+        self._updatedRecordsInfo: Dict[int, Dict[str, str]] = {
+            0: {}, 
+            1: {}
+        }
 
         self.addRowToMainTable_pushButton.pressed.connect(lambda: self._addRow(True))
         self.addRowToChildTable_pushButton.pressed.connect(lambda: self._addRow(False))
@@ -52,8 +50,10 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
 
         for child_table_name in child_table_names:
             self.childTables_comboBox.addItem(child_table_name)
+        self.childTables_comboBox.currentTextChanged.connect(self._fillChildTable)
 
         self._fillMainTable(main_table_columns_names, main_table_columns_values)
+        self._fillChildTable()
 
     @property
     def _getTablesWidgets(self) -> List[QtWidgets.QTableWidget]:
@@ -172,12 +172,14 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
         else:
             self._updatedRecordsInfo[table_idx][idx_column_value][selected_column_name] = new_value
 
+        print(self._updatedRecordsInfo)
+
     def _updateRecord(self) -> None:
         queries: List[str] = []
-        tables_widget = [self.mainTable_tableWidget, self.childTable_tableWidget]
-        tables_names = [self._main_table_name, self.childTables_comboBox.currentText()]
+        tables_widget = [self.childTable_tableWidget, self.mainTable_tableWidget]
+        tables_names = [self.childTables_comboBox.currentText(), self._main_table_name]
 
-        for table_idx, update_info in enumerate(self._updatedRecordsInfo):
+        for table_idx, update_info in self._updatedRecordsInfo.items():
             table_name = tables_names[table_idx]
             for main_column_idx, items_dict in update_info.items():
                 main_column_name = tables_widget[table_idx].horizontalHeaderItem(0).text()
@@ -229,13 +231,13 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
         child_table_columns_names = self._child_tables_columns_names[child_table_idx]
         child_table_values = self._child_tables_column_values[child_table_idx]
         
-        self.mainTable_tableWidget.setRowCount(len(child_table_values))
-        self.mainTable_tableWidget.setColumnCount(len(child_table_columns_names))
+        self.childTable_tableWidget.setRowCount(len(child_table_values))
+        self.childTable_tableWidget.setColumnCount(len(child_table_columns_names))
 
-        self.mainTable_tableWidget.setHorizontalHeaderLabels(child_table_columns_names)
+        self.childTable_tableWidget.setHorizontalHeaderLabels(child_table_columns_names)
         for row_idx, items in enumerate(child_table_values):
             for column_idx, item in enumerate(items):
-                _item = QtWidgets.QTableWidgetItem(item)
+                _item = QtWidgets.QTableWidgetItem(str(item))
                 self.childTable_tableWidget.setItem(row_idx, column_idx, _item)
 
         self.childTable_tableWidget.cellChanged.connect(self._addChildCellToArray)
@@ -249,7 +251,7 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
         self.mainTable_tableWidget.setHorizontalHeaderLabels(main_table_columns_names)
         for row_idx, items in enumerate(main_table_columns_values):
             for column_idx, item in enumerate(items):
-                _item = QtWidgets.QTableWidgetItem(item)
+                _item = QtWidgets.QTableWidgetItem(str(item))
                 self.mainTable_tableWidget.setItem(row_idx, column_idx, _item)
             
         self.mainTable_tableWidget.cellChanged.connect(self._addMainCellToArray)

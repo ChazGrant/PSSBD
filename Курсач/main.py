@@ -36,7 +36,7 @@
 # просматривать таблицу больные)
 
 
-from typing import List, Any, Union, Dict
+from typing import List, Any, Union, Dict, Callable
 from PyQt5 import QtGui, QtWidgets, QtCore
 from main_formUI import Ui_MainWindow
 import psycopg2
@@ -61,7 +61,7 @@ else:
     import complex_requests, requests
 
 
-QUERIES: Dict[str, function] = dict()
+QUERIES: Dict[str, Callable] = dict()
 for function_name, function in getmembers(requests, isfunction):
     QUERIES[function_name] = function
 
@@ -127,7 +127,7 @@ def saveDataToExcel(columns_names: List[str], values: List[List[Any]], report_na
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     window_closed = QtCore.pyqtSignal()
-    def __init__(self, cursor: psycopg2.cursor, conn: psycopg2.connection) -> None:
+    def __init__(self, cursor, conn) -> None:
         super(MainWindow, self).__init__()
         self.setupUi(self)
 
@@ -254,7 +254,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                                    main_table_column_values, 
                                    child_table_names, 
                                    child_tables_columns_names, 
-                                   child_tables_column_values)
+                                   child_tables_column_values,
+                                   self._cursor,
+                                   self._conn)
+        self.widget.show()
 
     def _addRowToTheTableWidget(self) -> None:
         current_row_amount = self.tableWidget.rowCount()
