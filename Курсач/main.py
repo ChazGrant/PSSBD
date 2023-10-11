@@ -60,7 +60,7 @@ else:
     TESTING_ENABLED = 0
     import complex_requests, requests
 
-
+MODIFIED_VIEW = "symmetricInnerRequestWithoutConditionTwo"
 QUERIES: Dict[str, Callable] = dict()
 for function_name, function in getmembers(requests, isfunction):
     QUERIES[function_name] = function
@@ -134,6 +134,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.__setComboBoxes()
         self._cursor = cursor 
         self._conn = conn
+
+        self._table_is_displayed = False
 
         self._new_rows_added: List[int] = list()
         self._updatedRecordsInfo: Dict[str, Dict[str, str]] = dict()
@@ -269,7 +271,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def _addRecord(self) -> None:
         columns_names: List[str] = []
-        table_name = TABLES_DICT[self.tables_comboBox.currentText()]
+        if self._table_is_displayed:
+            table_name = TABLES_DICT[self.tables_comboBox.currentText()]
+        else:
+            table_name = self.queries_comboBox.currentText()
         for column in range(self.tableWidget.columnCount()):
             columns_names.append(self.tableWidget.horizontalHeaderItem(column).text())
 
@@ -295,48 +300,71 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             table_columns = ", ".join(columns_names[1:])
             table_values = ", ".join([f"'{value}'" for value in row])
             try:
-                query = "INSERT INTO %s(%s) VALUES (%s)" % (table_name, table_columns, table_values)
+                query = "INSERT INTO %s(%s) VALUES (%s);" % (table_name, table_columns, table_values)
+                print(query)
                 self._cursor.execute(query)
+                self._conn.commit()
             except psycopg2.errors.InvalidDatetimeFormat:
                 self._conn.rollback()
                 return showError("Неверный формат даты\nПример правильного формата: 2001-01-30")
 
-            self._cursor.execute(query)
-            self._conn.rollback()
+            self._default_rows_amount += 1
 
     def _addCellToArray(self) -> None:
         selected_item = self.tableWidget.selectedItems()[0]
         new_value = selected_item.text()
 
-        seleted_row = self.tableWidget.row(selected_item)
+        selected_row = self.tableWidget.row(selected_item)
+        if selected_row > self._default_rows_amount:
+            return
+        
         seleted_column = self.tableWidget.column(selected_item)
 
         selected_column_name = self.tableWidget.horizontalHeaderItem(seleted_column).text()
-        idx_column_value = self.tableWidget.item(seleted_row, 0).text()
+        idx_column_value = self.tableWidget.item(selected_row, 0).text()
         
         if idx_column_value not in self._updatedRecordsInfo.keys():
             self._updatedRecordsInfo[idx_column_value] = {selected_column_name: new_value}
         else:
             self._updatedRecordsInfo[idx_column_value][selected_column_name] = new_value
+        print(self._updatedRecordsInfo)
 
     def _updateRecord(self) -> None:
         queries = []
-        table_name = TABLES_DICT[self.tables_comboBox.currentText()]
-        for main_column_idx, items_dict in self._updatedRecordsInfo.items():
+        if self._table_is_displayed:
+            table_name = TABLES_DICT[self.tables_comboBox.currentText()]
             main_column_name = self.tableWidget.horizontalHeaderItem(0).text()
+        else:
+            table_name = self.queries_comboBox.currentText()
+            main_column_name = self.tableWidget.horizontalHeaderItem(1).text()
+        
+        for main_column_idx, items_dict in self._updatedRecordsInfo.items():
             new_columns_values = []
             for column_name, new_value in items_dict.items():
                 new_columns_values.append("{} = '{}'".format(column_name, new_value))
 
-            query = "UPDATE TABLE {} SET {} WHERE {} = {}".format(table_name, 
-                        ", ".join(item for item in new_columns_values),
-                        main_column_name,
-                        main_column_idx)
+            if self._table_is_displayed:
+                query = "UPDATE TABLE {} SET {} WHERE {} = {}".format(table_name, 
+                            ", ".join(item for item in new_columns_values),
+                            main_column_name,
+                            main_column_idx)
+            else:
+                procedures_names = [self.tableWidget.item(row, 0).text() for row in range(self.tableWidget.rowCount())]
+                row_pos = procedures_names.index(main_column_idx)
+                print(row_pos)
+                return
+                main_column_idx = self._default_columns_names
+                query = "UPDATE {} SET {} WHERE {} = {}".format(table_name, 
+                ", ".join(item for item in new_columns_values),
+                main_column_name,
+                main_column_idx)
             queries.append(query)
 
         for query in queries:
             try:
+                print(query)
                 self._cursor.execute(query)
+                self._conn.commit()
             except Exception as e:
                 showError(str(e))
                 self._conn.rollback()
@@ -375,12 +403,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             return showError("Ошибка в формате данных")
         
         columns_names = [desc[0] for desc in self._cursor.description]
+        self._table_is_displayed = True
         self.__fillData(columns_names)
 
     def _visualizeQuery(self) -> None:
         query_name = self.queries_comboBox.currentText()
-        if not query_name == "symmetricInnerRequestWithoutConditionTwo":
+        print(query_name)
+        if not query_name == MODIFIED_VIEW:
             self.__enableDMLButtons(False)
+        else:
+            self.__enableDMLButtons(True)
 
         if "total" in query_name.lower():
             self.buildSummaryChart_pushButton.setEnabled(True)
@@ -394,6 +426,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             return showError("У Вас недостаточно прав для выполнения данного запроса")
         
         columns_names = [desc[0] for desc in self._cursor.description]
+        self._table_is_displayed = False
         self.__fillData(columns_names)
 
     def _updateSortingButtonsState(self) -> None:
@@ -422,9 +455,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         data = self._cursor.fetchall()
         self.tableWidget.setRowCount(len(data))
+        self._default_rows_amount = len(data)
         for row_idx, row in enumerate(data):
             for column_idx, item in enumerate(row):
                 _item = QtWidgets.QTableWidgetItem(str(item))
+                if (self.queries_comboBox.currentText() == MODIFIED_VIEW and \
+                    column_idx == 0 and \
+                    not self._table_is_displayed) or \
+                    (not self._table_is_displayed and \
+                    not self.queries_comboBox.currentText() == MODIFIED_VIEW):
+                    _item.setFlags(QtCore.Qt.ItemFlag.ItemIsEnabled)
                 self.tableWidget.setItem(row_idx, column_idx, _item)
 
         self.tableWidget.resizeColumnsToContents()
