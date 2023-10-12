@@ -318,7 +318,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         new_value = selected_item.text()
 
         selected_row = self.tableWidget.row(selected_item)
-        if selected_row > self._default_rows_amount:
+        if (selected_row + 1) > self._default_rows_amount:
             return
         
         seleted_column = self.tableWidget.column(selected_item)
@@ -330,7 +330,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self._updatedRecordsInfo[idx_column_value] = {selected_column_name: new_value}
         else:
             self._updatedRecordsInfo[idx_column_value][selected_column_name] = new_value
-        print(self._updatedRecordsInfo)
 
     def _updateRecord(self) -> None:
         queries = []
