@@ -161,7 +161,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.enableSorting_checkBox.stateChanged.connect(self._updateSortingButtonsState)
 
-        self.__fillColumns()
+        self.centralWidget().setLayout(self.main_verticalLayout)
+
+        # self.__fillColumns()
 
     def __setComboBoxes(self) -> None:
         self.__setTables()
