@@ -38,7 +38,7 @@
 
 from typing import List, Any, Union, Dict, Callable
 from PyQt5 import QtGui, QtWidgets, QtCore
-from main_formUI import Ui_MainWindow
+from UI_Forms.main_formUI import Ui_MainWindow
 import psycopg2
 
 from inspect import getmembers, isfunction
@@ -139,6 +139,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self._new_rows_added: List[int] = list()
         self._updatedRecordsInfo: Dict[str, Dict[str, str]] = dict()
+        self._default_procedures_names: List[str] = list()
 
         self.visualizeTable_pushButton.pressed.connect(self._visualizeTable)
         self.visualizeQuery_pushButton.pressed.connect(self._visualizeQuery)
@@ -349,15 +350,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                             main_column_name,
                             main_column_idx)
             else:
-                procedures_names = [self.tableWidget.item(row, 0).text() for row in range(self.tableWidget.rowCount())]
-                row_pos = procedures_names.index(main_column_idx)
-                print(row_pos)
-                return
-                main_column_idx = self._default_columns_names
+                new_column_name = new_columns_values[0]
+                procedures_names = [self.tableWidget.item(row, 1).text() for row in range(self.tableWidget.rowCount())]
+                row_pos = procedures_names.index(new_column_name)
+
+                old_column_value = self._default_procedures_names[row_pos]
+
                 query = "UPDATE {} SET {} WHERE {} = {}".format(table_name, 
-                ", ".join(item for item in new_columns_values),
+                new_column_name,
                 main_column_name,
-                main_column_idx)
+                old_column_value)
             queries.append(query)
 
         for query in queries:
@@ -458,6 +460,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self._default_rows_amount = len(data)
         for row_idx, row in enumerate(data):
             for column_idx, item in enumerate(row):
+                if not self._table_is_displayed and \
+                    self.queries_comboBox.currentText() == MODIFIED_VIEW and \
+                    column_idx == 1:
+                    self._default_procedures_names.append(item)
+
                 _item = QtWidgets.QTableWidgetItem(str(item))
                 if (self.queries_comboBox.currentText() == MODIFIED_VIEW and \
                     column_idx == 0 and \

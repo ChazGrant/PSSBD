@@ -1,5 +1,5 @@
 from PyQt5 import QtWidgets
-from login_formUI import Ui_MainWindow
+from UI_Forms.login_formUI import Ui_MainWindow
 import psycopg2
 from main import MainWindow
 from CONFIG import CONFIG

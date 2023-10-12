@@ -1,6 +1,6 @@
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
-from compoundForm_formUI import Ui_Form
+from UI_Forms.compoundForm_formUI import Ui_Form
 import psycopg2
 
 from typing import List, Any, Dict, Union
