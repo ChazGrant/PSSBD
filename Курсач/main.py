@@ -136,7 +136,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         super(MainWindow, self).__init__()
         self.setupUi(self)
 
-        self.__setComboBoxes()
         self._cursor = cursor 
         self._conn = conn
 
@@ -170,6 +169,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.centralWidget().setLayout(self.main_verticalLayout)
 
+        self.__setComboBoxes()
         # self.__fillColumns()
 
     def __setComboBoxes(self) -> None:
@@ -200,10 +200,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def _queriesChangedEvent(self) -> None:
         query_name = self.queries_comboBox.currentText()
         query_idx = QUERIES.index(query_name)
-        params_amount = len(param for param in PARAMS[query_idx].split(" ") if param)
+        params_amount = len([param for param in PARAMS[query_idx].split(" ") if param])
 
+        self.params_textEdit.setText("")
         self.params_textEdit.setEnabled(bool(params_amount))
-        self.params_textEdit.setText(PARAMS[query_idx])
+        self.params_textEdit.setPlaceholderText(PARAMS[query_idx])
         self.visualizeQuery_pushButton.setEnabled(not bool(params_amount))
         self.__clearTableWidget()
 
@@ -454,11 +455,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.buildSummaryChart_pushButton.setEnabled(False)
             
         try:
-            self._cursor.execute("SELECT * FROM %s" % f"{query_name}({input_params})" if _params_amount else query_name)
-            QUERIES[query_name](self._cursor)
+            self._cursor.execute("SELECT * FROM %s" % (f"{query_name}({input_params})" if input_params else query_name))
         except psycopg2.errors.InsufficientPrivilege:
             self._conn.rollback()
             return showError("У Вас недостаточно прав для выполнения данного запроса")
+        except psycopg2.errors.InvalidDatetimeFormat:
+            self._conn.rollback()
+            return showError("Неверный формат даты")
+        except psycopg2.errors.InvalidTextRepresentation:
+            self._conn.rollback()
+            return showError("Неверный формат числа")
         
         columns_names = [desc[0] for desc in self._cursor.description]
         self._table_is_displayed = False
