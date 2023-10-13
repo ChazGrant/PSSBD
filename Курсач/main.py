@@ -123,7 +123,11 @@ def saveDataToExcel(columns_names: List[str], values: List[List[Any]], report_na
 
     for row_idx, row in enumerate(values):
         for column_idx, column in enumerate(row):
-            ws.cell(row=row_idx + 2, column=column_idx + 1).value = column
+            try:
+                ws.cell(row=row_idx + 2, column=column_idx + 1).value = column
+            except Exception as e:
+                print(str(e))
+                return showError(str(e))
 
     current_datetime = datetime.datetime.now().strftime("%d%m%y%H%M%S")
     wb_name = f"Отчёт по {report_name} {current_datetime}.xlsx"
@@ -527,11 +531,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         for row in range(self.tableWidget.rowCount()):
             _inner_values: List[Any] = []
             for column in range(self.tableWidget.columnCount()):
-                _inner_values.append(self.tableWidget.item(row, column))
+                _inner_values.append(self.tableWidget.item(row, column).text())
 
             values.append(_inner_values)
 
-        saveDataToExcel(columns_values, values, self.queries_comboBox.currentText())
+        if self._table_is_displayed:
+            saveDataToExcel(columns_values, values, self.tables_comboBox.currentText())
+        else:
+            saveDataToExcel(columns_values, values, self.queries_comboBox.currentText())
 
     def _buildSummaryChart(self) -> None:
         if self.tableWidget.rowCount() == 0:
