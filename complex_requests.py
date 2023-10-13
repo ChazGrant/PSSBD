@@ -1,9 +1,9 @@
 import psycopg2
-from CONFIG import CONFIG
+# from CONFIG import CONFIG
 
 
-conn = psycopg2.connect(**CONFIG)
-cursor = conn.cursor()
+# conn = psycopg2.connect(**CONFIG)
+# cursor = conn.cursor()
 
 # итоговый запрос без условия; 
 # итоговый запрос с условием на данные; 

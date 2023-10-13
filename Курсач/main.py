@@ -61,12 +61,17 @@ else:
     import complex_requests, requests
 
 MODIFIED_VIEW = "symmetricInnerRequestWithoutConditionTwo"
-QUERIES: Dict[str, Callable] = dict()
-for function_name, function in getmembers(requests, isfunction):
-    QUERIES[function_name] = function
+QUERIES: List[str] = list()
+QUERIES = ['leftOuterJoinRequest', 'requestOnRequestLeftJoin', 'rightOuterJoinRequest', 
+'symmetricInnerRequestWithConditionDateOne', 'symmetricInnerRequestWithConditionDateTwo', 
+'symmetricInnerRequestWithConditionExternalKeyOne', 'symmetricInnerRequestWithConditionExternalKeyTwo', 
+'symmetricInnerRequestWithoutConditionOne', 'symmetricInnerRequestWithoutConditionThree', 
+'symmetricInnerRequestWithoutConditionTwo', 'queryOnTotalQuery', 'totalQueryWithDataCondition', 
+'totalQueryWithDataGroupCondition', 'totalQueryWithGroupCondition',  'totalQueryWithSubquery', 
+'totalQueryWithoutCondition']
 
-for function_name, function in getmembers(complex_requests, isfunction):
-    QUERIES[function_name] = function
+PARAMS = ['', 'birth_date', '', 'call_date_time', 'call_date_time call_date_time', 'social_status_name', 
+'full_name', '', '', '', '', 'call_reason_id', 'call_reason_id call_reason_id', '', '', '']
 
 def showMessage(text: str) -> None:
     msg = QtWidgets.QMessageBox()
@@ -155,7 +160,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.deleteRecord_pushButton.pressed.connect(self._deleteRecord)
 
         self.tables_comboBox.currentTextChanged.connect(self._tablesChangedEvent)
-        self.queries_comboBox.currentTextChanged.connect(self.__clearTableWidget)
+        self.queries_comboBox.currentTextChanged.connect(self._queriesChangedEvent)
+
+        self.params_textEdit.textChanged.connect(self._checkParamsAmount)
         
         self.editChildTable_pushButton.pressed.connect(self._prepareCompoundForm)
 
@@ -174,7 +181,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.tables_comboBox.addItem(table)
 
     def __setQueries(self) -> None:
-        for query in QUERIES.keys():
+        for query in QUERIES:
             self.queries_comboBox.addItem(query)
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
@@ -189,6 +196,26 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def _tablesChangedEvent(self) -> None:
         self.__fillColumns()
         self.__clearTableWidget()
+
+    def _queriesChangedEvent(self) -> None:
+        query_name = self.queries_comboBox.currentText()
+        query_idx = QUERIES.index(query_name)
+        params_amount = len(param for param in PARAMS[query_idx].split(" ") if param)
+
+        self.params_textEdit.setEnabled(bool(params_amount))
+        self.params_textEdit.setText(PARAMS[query_idx])
+        self.visualizeQuery_pushButton.setEnabled(not bool(params_amount))
+        self.__clearTableWidget()
+
+    def _checkParamsAmount(self) -> None:
+        query_name = self.queries_comboBox.currentText()
+        query_idx = QUERIES.index(query_name)
+
+        params_amount = len([param for param in PARAMS[query_idx].split(" ") if param])
+        input_params = [input_param for input_param in self.params_textEdit.toPlainText().split(" ") \
+            if input_param]
+
+        self.visualizeQuery_pushButton.setEnabled(len(input_params) == params_amount)
 
     @property
     def _selectedColumn(self) -> str:
@@ -411,7 +438,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def _visualizeQuery(self) -> None:
         query_name = self.queries_comboBox.currentText()
-        print(query_name)
+
+        input_params = [input_param for input_param in self.params_textEdit.toPlainText().split(" ") \
+            if input_param]
+        input_params = ", ".join([f"'{input_param}'" for input_param in input_params])
+        
         if not query_name == MODIFIED_VIEW:
             self.__enableDMLButtons(False)
         else:
@@ -423,6 +454,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.buildSummaryChart_pushButton.setEnabled(False)
             
         try:
+            self._cursor.execute("SELECT * FROM %s" % f"{query_name}({input_params})" if _params_amount else query_name)
             QUERIES[query_name](self._cursor)
         except psycopg2.errors.InsufficientPrivilege:
             self._conn.rollback()

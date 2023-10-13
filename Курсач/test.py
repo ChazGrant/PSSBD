@@ -1,6 +1,9 @@
 import psycopg2
 import argparse
+from inspect import getmembers, isfunction
+from typing import Dict, Callable
 
+import complex_requests, requests
 
 CONFIG = {
             "database": "ambulance",
@@ -16,12 +19,3 @@ CONFIG = {
 # cursor.execute("call GetSickPeopleBySocialStatus('пенсионер')")
 # print(cursor.fetchall())
 
-_dict = {
-            "main": [],
-            "child": []
-        }
-
-_dict["main"].append(14)
-_dict["child"].append(14)
-
-print(_dict)

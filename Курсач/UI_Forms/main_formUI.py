@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'UI_Forms/main_form.ui'
+# Form implementation generated from reading ui file 'main_form.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.7
 #
@@ -14,12 +14,12 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1631, 865)
+        MainWindow.resize(1407, 664)
         MainWindow.setMaximumSize(QtCore.QSize(1631, 865))
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayoutWidget_2 = QtWidgets.QWidget(self.centralwidget)
-        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(290, 120, 1406, 610))
+        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(0, 0, 1406, 610))
         self.verticalLayoutWidget_2.setObjectName("verticalLayoutWidget_2")
         self.main_verticalLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_2)
         self.main_verticalLayout.setContentsMargins(0, 0, 0, 0)
@@ -73,6 +73,11 @@ class Ui_MainWindow(object):
         self.queries_comboBox = QtWidgets.QComboBox(self.verticalLayoutWidget_2)
         self.queries_comboBox.setObjectName("queries_comboBox")
         self.verticalLayout_4.addWidget(self.queries_comboBox)
+        self.params_textEdit = QtWidgets.QTextEdit(self.verticalLayoutWidget_2)
+        self.params_textEdit.setMinimumSize(QtCore.QSize(400, 30))
+        self.params_textEdit.setMaximumSize(QtCore.QSize(400, 30))
+        self.params_textEdit.setObjectName("params_textEdit")
+        self.verticalLayout_4.addWidget(self.params_textEdit)
         self.label = QtWidgets.QLabel(self.verticalLayoutWidget_2)
         self.label.setMaximumSize(QtCore.QSize(16777215, 25))
         self.label.setSizeIncrement(QtCore.QSize(0, 25))
@@ -120,7 +125,7 @@ class Ui_MainWindow(object):
         self.main_verticalLayout.addLayout(self.horizontalLayout_2)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1631, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1407, 21))
         self.menubar.setObjectName("menubar")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)

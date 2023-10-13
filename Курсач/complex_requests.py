@@ -1,9 +1,9 @@
 import psycopg2
-from CONFIG import CONFIG
+# from CONFIG import CONFIG
 
 
-conn = psycopg2.connect(**CONFIG)
-cursor = conn.cursor()
+# conn = psycopg2.connect(**CONFIG)
+# cursor = conn.cursor()
 
 # итоговый запрос без условия; 
 # итоговый запрос с условием на данные; 
@@ -15,7 +15,7 @@ def totalQueryWithoutCondition(cursor):
     cursor.execute("SELECT SUM(money_payment) as total_payment FROM call_requests")
 
 def totalQueryWithDataCondition(cursor):
-    cursor.execute("SELECT SUM(money_payment) as total_payment FROM call_requests WHERE call_reason_id=5")
+    cursor.execute("SELECT SUM(money_payment) as total_payment FROM call_requests WHERE call_reason_id=%s")
 
 def totalQueryWithGroupCondition(cursor):
     cursor.execute("SELECT cr.call_reason_name, SUM(money_payment) AS total_payment FROM call_requests \
@@ -25,7 +25,7 @@ def totalQueryWithGroupCondition(cursor):
 def totalQueryWithDataGroupCondition(cursor):
     cursor.execute("SELECT cr.call_reason_name, SUM(money_payment) AS total_payment FROM call_requests \
         INNER JOIN call_reason cr ON call_requests.call_reason_id=cr.call_reason_id \
-            WHERE call_requests.call_reason_id IN (2, 4) \
+            WHERE call_requests.call_reason_id IN (%s, %s) \
             GROUP BY cr.call_reason_name;")
 
 def queryOnTotalQuery(cursor):
