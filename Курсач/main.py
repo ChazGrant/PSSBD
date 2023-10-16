@@ -198,7 +198,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.tableWidget.setColumnCount(0)
 
     def _tablesChangedEvent(self) -> None:
-        self.__fillColumns()
+        if not TESTING_ENABLED:
+            self.__fillColumns()
         self.__clearTableWidget()
 
     def _queriesChangedEvent(self) -> None:

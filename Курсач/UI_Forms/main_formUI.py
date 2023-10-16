@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'main_form.ui'
+# Form implementation generated from reading ui file 'UI_Forms/main_form.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.7
 #
@@ -14,12 +14,12 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1407, 664)
+        MainWindow.resize(1407, 660)
         MainWindow.setMaximumSize(QtCore.QSize(1631, 865))
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayoutWidget_2 = QtWidgets.QWidget(self.centralwidget)
-        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(0, 0, 1406, 610))
+        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(0, 0, 1406, 551))
         self.verticalLayoutWidget_2.setObjectName("verticalLayoutWidget_2")
         self.main_verticalLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_2)
         self.main_verticalLayout.setContentsMargins(0, 0, 0, 0)
@@ -87,16 +87,14 @@ class Ui_MainWindow(object):
         self.tables_comboBox.setObjectName("tables_comboBox")
         self.verticalLayout_4.addWidget(self.tables_comboBox)
         self.groupBox = QtWidgets.QGroupBox(self.verticalLayoutWidget_2)
+        self.groupBox.setMinimumSize(QtCore.QSize(0, 125))
         self.groupBox.setObjectName("groupBox")
         self.columnCriteria_textEdit = QtWidgets.QTextEdit(self.groupBox)
-        self.columnCriteria_textEdit.setGeometry(QtCore.QRect(10, 150, 181, 31))
+        self.columnCriteria_textEdit.setGeometry(QtCore.QRect(210, 50, 181, 31))
         self.columnCriteria_textEdit.setObjectName("columnCriteria_textEdit")
         self.columns_comboBox = QtWidgets.QComboBox(self.groupBox)
         self.columns_comboBox.setGeometry(QtCore.QRect(10, 40, 181, 22))
         self.columns_comboBox.setObjectName("columns_comboBox")
-        self.findByCriteria_pushButton = QtWidgets.QPushButton(self.groupBox)
-        self.findByCriteria_pushButton.setGeometry(QtCore.QRect(10, 190, 181, 34))
-        self.findByCriteria_pushButton.setObjectName("findByCriteria_pushButton")
         self.label_3 = QtWidgets.QLabel(self.groupBox)
         self.label_3.setGeometry(QtCore.QRect(10, 20, 191, 16))
         self.label_3.setObjectName("label_3")
@@ -105,13 +103,16 @@ class Ui_MainWindow(object):
         self.enableSorting_checkBox.setObjectName("enableSorting_checkBox")
         self.sortByAscending_radioButton = QtWidgets.QRadioButton(self.groupBox)
         self.sortByAscending_radioButton.setEnabled(False)
-        self.sortByAscending_radioButton.setGeometry(QtCore.QRect(10, 100, 191, 17))
+        self.sortByAscending_radioButton.setGeometry(QtCore.QRect(210, 10, 191, 17))
         self.sortByAscending_radioButton.setChecked(True)
         self.sortByAscending_radioButton.setObjectName("sortByAscending_radioButton")
         self.sortByDescending_radioButton = QtWidgets.QRadioButton(self.groupBox)
         self.sortByDescending_radioButton.setEnabled(False)
-        self.sortByDescending_radioButton.setGeometry(QtCore.QRect(10, 120, 191, 17))
+        self.sortByDescending_radioButton.setGeometry(QtCore.QRect(210, 30, 191, 17))
         self.sortByDescending_radioButton.setObjectName("sortByDescending_radioButton")
+        self.findByCriteria_pushButton = QtWidgets.QPushButton(self.groupBox)
+        self.findByCriteria_pushButton.setGeometry(QtCore.QRect(110, 90, 181, 34))
+        self.findByCriteria_pushButton.setObjectName("findByCriteria_pushButton")
         self.verticalLayout_4.addWidget(self.groupBox)
         self.buildSummaryChart_pushButton = QtWidgets.QPushButton(self.verticalLayoutWidget_2)
         self.buildSummaryChart_pushButton.setObjectName("buildSummaryChart_pushButton")
@@ -148,10 +149,10 @@ class Ui_MainWindow(object):
         self.label_2.setText(_translate("MainWindow", "Выберите запрос:"))
         self.label.setText(_translate("MainWindow", "Выберите таблицу:"))
         self.groupBox.setTitle(_translate("MainWindow", "Сортировка и фильтрация"))
-        self.findByCriteria_pushButton.setText(_translate("MainWindow", "Поиск по критерию"))
         self.label_3.setText(_translate("MainWindow", "Выберите поле: "))
         self.enableSorting_checkBox.setText(_translate("MainWindow", "Сортировка"))
         self.sortByAscending_radioButton.setText(_translate("MainWindow", "Отсортировать по возрастанию"))
         self.sortByDescending_radioButton.setText(_translate("MainWindow", "Отсортировать по убыванию"))
+        self.findByCriteria_pushButton.setText(_translate("MainWindow", "Поиск по критерию"))
         self.buildSummaryChart_pushButton.setText(_translate("MainWindow", "Построить итоговую диаграмму"))
         self.editChildTable_pushButton.setText(_translate("MainWindow", "Редактировать дочернюю таблицу"))
