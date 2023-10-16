@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>145</width>
-    <height>156</height>
+    <height>237</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,7 +19,7 @@
      <rect>
       <x>20</x>
       <y>10</y>
-      <width>104</width>
+      <width>111</width>
       <height>31</height>
      </rect>
     </property>
@@ -32,7 +32,7 @@
      <rect>
       <x>20</x>
       <y>50</y>
-      <width>104</width>
+      <width>111</width>
       <height>31</height>
      </rect>
     </property>
@@ -45,12 +45,26 @@
      <rect>
       <x>20</x>
       <y>90</y>
-      <width>101</width>
+      <width>111</width>
       <height>23</height>
      </rect>
     </property>
     <property name="text">
      <string>Вход</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="editUsers_pushButton">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>120</y>
+      <width>111</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Редактировать 
+пользователей</string>
     </property>
    </widget>
   </widget>
@@ -60,7 +74,7 @@
      <x>0</x>
      <y>0</y>
      <width>145</width>
-     <height>21</height>
+     <height>30</height>
     </rect>
    </property>
   </widget>

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'login.ui'
+# Form implementation generated from reading ui file 'login_form.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -14,21 +14,24 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(145, 156)
+        MainWindow.resize(145, 237)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.username_textEdit = QtWidgets.QTextEdit(self.centralwidget)
-        self.username_textEdit.setGeometry(QtCore.QRect(20, 10, 104, 31))
+        self.username_textEdit.setGeometry(QtCore.QRect(20, 10, 111, 31))
         self.username_textEdit.setObjectName("username_textEdit")
         self.password_textEdit = QtWidgets.QTextEdit(self.centralwidget)
-        self.password_textEdit.setGeometry(QtCore.QRect(20, 50, 104, 31))
+        self.password_textEdit.setGeometry(QtCore.QRect(20, 50, 111, 31))
         self.password_textEdit.setObjectName("password_textEdit")
         self.login_pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.login_pushButton.setGeometry(QtCore.QRect(20, 90, 101, 23))
+        self.login_pushButton.setGeometry(QtCore.QRect(20, 90, 111, 23))
         self.login_pushButton.setObjectName("login_pushButton")
+        self.editUsers_pushButton = QtWidgets.QPushButton(self.centralwidget)
+        self.editUsers_pushButton.setGeometry(QtCore.QRect(20, 120, 111, 61))
+        self.editUsers_pushButton.setObjectName("editUsers_pushButton")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 145, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 145, 30))
         self.menubar.setObjectName("menubar")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
@@ -44,3 +47,5 @@ class Ui_MainWindow(object):
         self.username_textEdit.setPlaceholderText(_translate("MainWindow", "Имя пользователя"))
         self.password_textEdit.setPlaceholderText(_translate("MainWindow", "Пароль"))
         self.login_pushButton.setText(_translate("MainWindow", "Вход"))
+        self.editUsers_pushButton.setText(_translate("MainWindow", "Редактировать \n"
+"пользователей"))

@@ -1,0 +1,49 @@
+Разработать по 2 триггера для каждого события (INSERT, UPDATE, DELETE)
+Обязательно создать BEFORE INSERT (с использованием генераторов задавать значение 
+первичного ключа для вновь добавляемой записи)
+
+Создать таблицы:
+sick_people_log(sick_people_id, full_name, birth_date, social_status_id, phone_number, address)
+social_status_history(socual_status_id, previous_name, current_name)
+
+1) TRIGGER log_sick_people AFTER UPDATE ON sick_people
+
+FUNCTION save_sick_people_info
+CREATE FUNCTION save_sick_people_info() RETURNS TRIGGER AS $$ BEGIN 
+    INSERT INTO sick_people_log(sick_people_id, full_name, birth_date, social_status_id, phone_number, address) VALUES (OLD.sick_peop
+le_id, OLD.full_name, OLD.birth_date, OLD.social_status_id, OLD.phone_number, OLD.address);
+
+2) TRIGGER log_social_status_history AFTER UPDATE ON social_status
+CREATE TRIGGER log_social_status_history AFTER UPDATE ON social_status FOR EACH ROW EXECUTE FUNCTION add_social_status_to_the_history();
+
+FUNCTION add_social_status_to_the_history
+CREATE FUNCTION add_social_status_to_the_history() RETURNS TRIGGER AS $$ BEGIN 
+INSERT INTO social_status_history(social_status_id, previous_name, current_name) VALUES(OLD.social_status_id, OLD.social_status_name, NEW.social_status_name); RETURN OLD; END;$$ LANGUAGE plpgsql;
+
+3) CREATE TRIGGER mark_sick_person BEFORE DELETE ON sick_person FOR EACH ROW EXECUTE FUNCTION mark_sick_person()
+
+CREATE FUNCTION mark_sick_person() RETURNS TRIGGER AS $$ BEGIN
+INSERT INTO healthy_people(full_name, phone_number) VALUES(OLD.full_name, OLD.phone_number); 
+RETURN NULL; END; $$ LANGUAGE plpgsql;
+
+4) CREATE TRIGGER abandon_first_aid_station BEFORE DELETE ON first_aid_stations FOR EACH ROW EXECUTE FUNCTION abandon_first_aid_station()
+
+CREATE FUNCTION abandon_station() RETURNS TRIGGER AS $$ BEGIN
+UPDATE first_aid_stations SET first_aid_station_number = 0 WHERE first_aid_station_id = OLD.first_aid_station_id;
+RETURN NULL; END; $$ LANGUAGE plpgsql;
+
+5) CREATE TRIGGER log_new_sick_person AFTER INSERT ON sick_people FOR EACH ROW EXECUTE FUNCTION insert_new_sick_person();
+
+CREATE FUNCTION insert_new_sick_person() RETURNS TRIGGER AS $$ BEGIN IF (SELECT COUNT(*) 
+FROM new_sick_people) > 20 THEN DELETE FROM new_sick_people WHERE new_sick_person_id = 
+(SELECT MIN(new_sick_person_id) FROM new_sick_people); END IF; 
+INSERT INTO new_sick_people(new_full_name, new_birth_date, new_phone_number, new_address) 
+VALUES(NEW.full_name, NEW.birth_date, NEW.phone_number, NEW.address); END; $$ LANGUAGE plpgsql;
+
+6) CREATE TRIGGER update_total_money_paid AFTER INSERT ON call_requests FOR EACH ROW EXECUTE FUNCTION update_total_money_paid();
+
+CREATE FUNCTION update_total_money_paid() RETURNS TRIGGER AS $$ DECLARE rowcount int; 
+total rowcount%TYPE; BEGIN SELECT COUNT(*) INTO rowcount FROM total_money_paid; SELECT 
+SUM(money_payment) INTO total FROM call_requests; IF rowcount > 0 THEN UPDATE total_money_paid 
+SET total_money = total_money + NEW.money_payment; ELSE INSERT INTO total_money_paid(total_money) 
+VALUES(total); END IF; END; $$ LANGUAGE plpgsql;

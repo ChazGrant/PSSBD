@@ -2,6 +2,7 @@ from PyQt5 import QtWidgets
 from UI_Forms.login_formUI import Ui_MainWindow
 import psycopg2
 from main import MainWindow
+from UserEditorForm import UserEditorForm
 from CONFIG import CONFIG
 
 
@@ -26,6 +27,24 @@ class LoginForm(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setupUi(self)
 
         self.login_pushButton.pressed.connect(self.login)
+        self.editUsers_pushButton.pressed.connect(self.openUsersEditor)
+
+    def openUsersEditor(self):
+        username = self.username_textEdit.toPlainText()
+        password = self.password_textEdit.toPlainText()
+
+        if not (username or password):
+            return
+        
+        try:
+            conn = psycopg2.connect(**CONFIG)
+            cursor = conn.cursor()
+        except psycopg2.OperationalError:
+            return showError("Неверные данные для входа")
+        
+        self.widget = UserEditorForm(conn, cursor)
+        self.widget.show()
+        self.close()
 
     def login(self):
         username = self.username_textEdit.toPlainText()
