@@ -19,7 +19,7 @@
      <rect>
       <x>190</x>
       <y>60</y>
-      <width>441</width>
+      <width>492</width>
       <height>231</height>
      </rect>
     </property>
@@ -44,6 +44,13 @@
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <widget class="QPushButton" name="updatePrivileges_pushButton">
+           <property name="text">
+            <string>Обновить привилегии</string>
+           </property>
+          </widget>
+         </item>
          <item>
           <widget class="QPushButton" name="addPrivilege_pushButton">
            <property name="text">

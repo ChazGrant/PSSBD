@@ -18,7 +18,7 @@ class Ui_MainWindow(object):
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayoutWidget = QtWidgets.QWidget(self.centralwidget)
-        self.verticalLayoutWidget.setGeometry(QtCore.QRect(190, 60, 441, 231))
+        self.verticalLayoutWidget.setGeometry(QtCore.QRect(190, 60, 492, 231))
         self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
         self.mainLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
         self.mainLayout.setContentsMargins(0, 0, 0, 0)
@@ -42,6 +42,9 @@ class Ui_MainWindow(object):
         self.verticalLayout.addLayout(self.horizontalLayout)
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.updatePrivileges_pushButton = QtWidgets.QPushButton(self.verticalLayoutWidget)
+        self.updatePrivileges_pushButton.setObjectName("updatePrivileges_pushButton")
+        self.horizontalLayout_2.addWidget(self.updatePrivileges_pushButton)
         self.addPrivilege_pushButton = QtWidgets.QPushButton(self.verticalLayoutWidget)
         self.addPrivilege_pushButton.setObjectName("addPrivilege_pushButton")
         self.horizontalLayout_2.addWidget(self.addPrivilege_pushButton)
@@ -65,5 +68,6 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        self.updatePrivileges_pushButton.setText(_translate("MainWindow", "Обновить привилегии"))
         self.addPrivilege_pushButton.setText(_translate("MainWindow", "Добавить привилегию"))
         self.deletePrivilege_pushButton.setText(_translate("MainWindow", "Удалить привилегию"))

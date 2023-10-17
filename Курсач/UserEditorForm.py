@@ -1,9 +1,7 @@
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import pyqtSignal
 from UI_Forms.userEditor_formUI import Ui_MainWindow
-import psycopg2
 
-from typing import List, Any, Dict, Union
+from typing import List, Dict
 
 
 ALL_PRIVILEGES = ["SELECT", "DELETE", "UPDATE", "INSERT", "TRUNCATE", "REFERENCES", "TRIGGER"]
@@ -23,10 +21,15 @@ class UserEditorForm(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self._cursor = cursor
         self._conn = conn
-        self._users_rights = dict()
+        self._users_rights: Dict[str, Dict[str, List[str]]] = dict()
+        self._updated_users: Dict[str, List[str]] = dict()
 
         self.users_listWidget.currentItemChanged.connect(self._fillPrivileges)
         self.tables_listWidget.currentItemChanged.connect(self._fillPrivileges)
+
+        self.addPrivilege_pushButton.pressed.connect(self._addPrivilege)
+        self.deletePrivilege_pushButton.pressed.connect(self._deletePrivilege)
+        self.updatePrivileges_pushButton.pressed.connect(self._updatePrivileges)
 
         self.__setUserRights()
         self._setUsers()
@@ -72,7 +75,6 @@ class UserEditorForm(QtWidgets.QMainWindow, Ui_MainWindow):
         try:
             selected_user = self.users_listWidget.currentItem().text()
             selected_table = self.tables_listWidget.currentItem().text()
-            print(selected_user)
         except AttributeError:
             return
         
@@ -89,3 +91,72 @@ class UserEditorForm(QtWidgets.QMainWindow, Ui_MainWindow):
             if privilege not in table_privileges:
                 self.allPrivileges_listWidget.addItem(privilege)
 
+    def _addPrivilege(self):
+        try:
+            selected_user = self.users_listWidget.currentItem().text()
+            selected_table = self.tables_listWidget.currentItem().text()
+            selected_item = self.allPrivileges_listWidget.currentItem()
+            selected_privilege = selected_item.text()
+        except AttributeError:
+            return
+        
+        try:
+            self._users_rights[selected_user][selected_table].append(selected_privilege)
+        except KeyError:
+            self._users_rights[selected_user][selected_table] = [selected_privilege]
+
+        if selected_user in self._updated_users.keys():
+            if selected_table not in self._updated_users[selected_user]:
+                self._updated_users[selected_user].append(selected_table)
+        else:
+            self._updated_users[selected_user] = [selected_table]
+
+        row = self.allPrivileges_listWidget.row(selected_item)
+        self.allPrivileges_listWidget.takeItem(row)
+
+        self.grantedPrivileges_listWidget.addItem(selected_privilege)
+
+    def _deletePrivilege(self):
+        try:
+            selected_user = self.users_listWidget.currentItem().text()
+            selected_table = self.tables_listWidget.currentItem().text()
+            selected_item = self.grantedPrivileges_listWidget.currentItem()
+            selected_privilege = selected_item.text()
+        except AttributeError:
+            return
+        
+        self._users_rights[selected_user][selected_table].remove(selected_privilege)
+
+        if selected_user in self._updated_users.keys():
+            if selected_table not in self._updated_users[selected_user]:
+                self._updated_users[selected_user].append(selected_table)
+        else:
+            self._updated_users[selected_user] = [selected_table]
+
+        row = self.grantedPrivileges_listWidget.row(selected_item)
+        self.grantedPrivileges_listWidget.takeItem(row)
+
+        self.allPrivileges_listWidget.addItem(selected_privilege)
+
+    def _updatePrivileges(self):
+        for username in self._users_rights.keys():
+            if username in self._updated_users:
+                updated_tables = self._updated_users[username]
+            else:
+                continue
+                
+            for table_name, privileges in self._users_rights[username].items():
+                if table_name not in updated_tables:
+                    continue
+                
+                if not len(privileges):
+                    continue
+
+                query = "GRANT {} ON {} TO {};".format(", ".join(privileges), table_name, username)
+
+                try:
+                    self._cursor.execute(query)
+                    self._conn.commit()
+                except Exception as e:
+                    self._conn.rollback()
+            

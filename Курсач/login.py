@@ -42,6 +42,9 @@ class LoginForm(QtWidgets.QMainWindow, Ui_MainWindow):
         except psycopg2.OperationalError:
             return showError("Неверные данные для входа")
         
+        if not username == "ambulance_admin":
+            return showError("У Вас недостаточно прав")
+
         self.widget = UserEditorForm(conn, cursor)
         self.widget.show()
         self.close()
