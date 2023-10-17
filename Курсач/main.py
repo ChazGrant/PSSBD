@@ -36,12 +36,11 @@
 # просматривать таблицу больные)
 
 
-from typing import List, Any, Union, Dict, Callable
+from typing import List, Any, Union, Dict
 from PyQt5 import QtGui, QtWidgets, QtCore
 from UI_Forms.main_formUI import Ui_MainWindow
 import psycopg2
 
-from inspect import getmembers, isfunction
 import sys
 
 from numpy import round as np_round
@@ -55,10 +54,8 @@ from CompoundForm import CompoundForm
 
 if "--test" in sys.argv:
     TESTING_ENABLED = 1
-    requests, complex_requests = [], []
 else:
     TESTING_ENABLED = 0
-    import complex_requests, requests
 
 MODIFIED_VIEW = "symmetricInnerRequestWithoutConditionTwo"
 QUERIES: List[str] = list()
@@ -126,7 +123,6 @@ def saveDataToExcel(columns_names: List[str], values: List[List[Any]], report_na
             try:
                 ws.cell(row=row_idx + 2, column=column_idx + 1).value = column
             except Exception as e:
-                print(str(e))
                 return showError(str(e))
 
     current_datetime = datetime.datetime.now().strftime("%d%m%y%H%M%S")
@@ -174,7 +170,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.centralWidget().setLayout(self.main_verticalLayout)
 
         self.__setComboBoxes()
-        # self.__fillColumns()
 
     def __setComboBoxes(self) -> None:
         self.__setTables()
@@ -258,7 +253,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.deleteRecord_pushButton.setEnabled(state)
         self.updateRecord_pushButton.setEnabled(state)
 
-    def _prepareCompoundForm(self):
+    def _prepareCompoundForm(self) -> None:
         selected_table = TABLES_DICT[self.tables_comboBox.currentText()]
         self._cursor.execute("SELECT * FROM %s" % selected_table)
 
@@ -337,7 +332,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             table_values = ", ".join([f"'{value}'" for value in row])
             try:
                 query = "INSERT INTO %s(%s) VALUES (%s);" % (table_name, table_columns, table_values)
-                print(query)
                 self._cursor.execute(query)
                 self._conn.commit()
             except psycopg2.errors.InvalidDatetimeFormat:
@@ -398,7 +392,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         for query in queries:
             try:
-                print(query)
                 self._cursor.execute(query)
                 self._conn.commit()
             except Exception as e:

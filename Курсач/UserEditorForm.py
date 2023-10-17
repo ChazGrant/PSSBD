@@ -1,4 +1,5 @@
 from PyQt5 import QtWidgets
+from PyQt5.QtCore import pyqtSignal
 from UI_Forms.userEditor_formUI import Ui_MainWindow
 
 from typing import List, Dict
@@ -15,6 +16,7 @@ def showError(text: str) -> None:
 
 
 class UserEditorForm(QtWidgets.QMainWindow, Ui_MainWindow):
+    window_closed = pyqtSignal()
     def __init__(self, conn, cursor) -> None:
         super(UserEditorForm, self).__init__()
         self.setupUi(self)
@@ -36,6 +38,10 @@ class UserEditorForm(QtWidgets.QMainWindow, Ui_MainWindow):
         self._setTables()
 
         self.centralWidget().setLayout(self.mainLayout)
+
+    def closeEvent(self, a0) -> None:
+        self.window_closed.emit()
+        return super().closeEvent(a0)
 
     def _setUsers(self):
         for username in self._users_rights.keys():
@@ -149,6 +155,13 @@ class UserEditorForm(QtWidgets.QMainWindow, Ui_MainWindow):
                 if table_name not in updated_tables:
                     continue
                 
+                query = "REVOKE ALL PRIVILEGES ON {} FROM {};".format(table_name, username)
+                try:
+                    self._cursor.execute(query)
+                    self._conn.commit()
+                except Exception as e:
+                    self._conn.rollback()
+
                 if not len(privileges):
                     continue
 

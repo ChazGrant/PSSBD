@@ -6,14 +6,14 @@ from UserEditorForm import UserEditorForm
 from CONFIG import CONFIG
 
 
-def showMessage(text: str):
+def showMessage(text: str) -> None:
     msg = QtWidgets.QMessageBox()
     msg.setIcon(QtWidgets.QMessageBox.Information)
     msg.setText(text)
     msg.setWindowTitle("Info")
     msg.exec_()
 
-def showError(text: str):
+def showError(text: str) -> None:
     msg = QtWidgets.QMessageBox()
     msg.setIcon(QtWidgets.QMessageBox.Critical)
     msg.setText(text)
@@ -22,20 +22,23 @@ def showError(text: str):
 
 
 class LoginForm(QtWidgets.QMainWindow, Ui_MainWindow):
-    def __init__(self):
+    def __init__(self) -> None:
         super(LoginForm, self).__init__()
         self.setupUi(self)
 
         self.login_pushButton.pressed.connect(self.login)
         self.editUsers_pushButton.pressed.connect(self.openUsersEditor)
 
-    def openUsersEditor(self):
+    def openUsersEditor(self) -> None:
         username = self.username_textEdit.toPlainText()
         password = self.password_textEdit.toPlainText()
 
-        if not (username or password):
+        if (len(username) == 0 or len(password) == 0):
             return
         
+        CONFIG["user"] = username
+        CONFIG["password"] = password
+
         try:
             conn = psycopg2.connect(**CONFIG)
             cursor = conn.cursor()
@@ -47,9 +50,11 @@ class LoginForm(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.widget = UserEditorForm(conn, cursor)
         self.widget.show()
-        self.close()
+        
+        self.hide()
+        self.widget.window_closed.connect(self.show)
 
-    def login(self):
+    def login(self) -> None:
         username = self.username_textEdit.toPlainText()
         password = self.password_textEdit.toPlainText()
 
@@ -59,10 +64,8 @@ class LoginForm(QtWidgets.QMainWindow, Ui_MainWindow):
         # ambulance_operator (fN6Pn!5
         # doctor u8YVX,:2
         # nurse ]Lg4SSr4
-        CONFIG["user"] = "ambulance_operator"
-        CONFIG["password"] = "(fN6Pn!5"
-        # CONFIG["user"] = username
-        # CONFIG["password"] = password
+        CONFIG["user"] = username
+        CONFIG["password"] = password
 
         try:
             conn = psycopg2.connect(**CONFIG)
