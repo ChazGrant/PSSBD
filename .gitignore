@@ -1,1 +1,4 @@
 CONFIG.py
+__pycache__/
+Курсач/__pycache__/
+*.pyc

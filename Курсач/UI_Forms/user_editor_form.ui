@@ -19,8 +19,8 @@
      <rect>
       <x>190</x>
       <y>60</y>
-      <width>492</width>
-      <height>231</height>
+      <width>658</width>
+      <height>256</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="mainLayout">
@@ -77,6 +77,13 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
+          <widget class="QPushButton" name="deleteUser_pushButton">
+           <property name="text">
+            <string>Удалить пользователя</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QPushButton" name="updatePrivileges_pushButton">
            <property name="text">
             <string>Обновить привилегии</string>
@@ -99,6 +106,34 @@
          </item>
         </layout>
        </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_4">
+         <item>
+          <widget class="QLineEdit" name="username_lineEdit">
+           <property name="placeholderText">
+            <string>Имя пользователя</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="password_lineEdit">
+           <property name="echoMode">
+            <enum>QLineEdit::Password</enum>
+           </property>
+           <property name="placeholderText">
+            <string>Пароль</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="addUser_pushButton">
+           <property name="text">
+            <string>Добавить пользователя</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
       </layout>
      </item>
     </layout>
@@ -110,7 +145,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>21</height>
+     <height>30</height>
     </rect>
    </property>
   </widget>

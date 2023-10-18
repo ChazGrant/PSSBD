@@ -20,3 +20,12 @@ CONFIG = {
 
 conn = psycopg2.connect(**CONFIG)
 cursor = conn.cursor()
+
+cursor.execute("SELECT * FROM information_schema.table_privileges \
+            WHERE table_catalog = 'ambulance' AND table_schema = 'public';")
+
+tables_query = "SELECT table_name FROM information_schema.tables \
+                      WHERE table_schema='public';"
+
+print([desc[0] for desc in cursor.description])
+print(cursor.fetchall())

@@ -32,6 +32,8 @@ class UserEditorForm(QtWidgets.QMainWindow, Ui_MainWindow):
         self.addPrivilege_pushButton.pressed.connect(self._addPrivilege)
         self.deletePrivilege_pushButton.pressed.connect(self._deletePrivilege)
         self.updatePrivileges_pushButton.pressed.connect(self._updatePrivileges)
+        self.addUser_pushButton.pressed.connect(self._addUser)
+        self.deleteUser_pushButton.pressed.connect(self._deleteUser)
 
         self.__setUserRights()
         self._setUsers()
@@ -42,6 +44,64 @@ class UserEditorForm(QtWidgets.QMainWindow, Ui_MainWindow):
     def closeEvent(self, a0) -> None:
         self.window_closed.emit()
         return super().closeEvent(a0)
+
+    def _addUser(self) -> None:
+        username = self.username_lineEdit.text()
+        password = self.password_lineEdit.text()
+
+        try:
+            query = "CREATE ROLE {} WITH LOGIN PASSWORD '{}'".format(username, password)
+            self._cursor.execute(query)
+
+            query = "GRANT CONNECT ON DATABASE ambulance TO {}".format(username)
+            self._cursor.execute(query)
+            self._conn.commit()
+        except Exception as e:
+            self._conn.rollback()
+            return showError(str(e))
+
+        self._users_rights[username] = {}
+        self.users_listWidget.clear()
+        self._setUsers()
+
+    def _deleteUser(self):
+        if not self.users_listWidget.currentItem():
+            return
+        
+        selected_item = self.users_listWidget.currentItem()
+        username = selected_item.text()
+
+        if username == "amublance_admin":
+            return showError("Вы не можете удалить данного пользователя")
+
+        query = "REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM {};".format(username)
+        try:
+            self._cursor.execute(query)
+            self._conn.commit()
+        except Exception as e:
+            self._conn.rollback()
+            return showError(str(e))
+        
+        query = "REVOKE ALL PRIVILEGES ON DATABASE ambulance FROM {};".format(username)
+        try:
+            self._cursor.execute(query)
+            self._conn.commit()
+        except Exception as e:
+            self._conn.rollback()
+            return showError(str(e))
+
+        query = "DROP ROLE {}".format(username)
+        try:
+            self._cursor.execute(query)
+            self._conn.commit()
+        except Exception as e:
+            self._conn.rollback()
+            return showError(str(e))
+        
+        self._users_rights.pop(username)
+
+        selected_row = self.users_listWidget.row(selected_item)
+        self.users_listWidget.takeItem(selected_row)
 
     def _setUsers(self):
         for username in self._users_rights.keys():
@@ -61,7 +121,15 @@ class UserEditorForm(QtWidgets.QMainWindow, Ui_MainWindow):
             WHERE table_catalog = 'ambulance' AND table_schema = 'public';"
         self._cursor.execute(query)
         usernames = [user[0] for user in self._cursor.fetchall()]
-        for username in usernames:
+        query = "SELECT pg_user.usename FROM pg_catalog.pg_user;"
+        self._cursor.execute(query)
+        all_users = [user[0] for user in self._cursor.fetchall()]
+        
+        for username in all_users:
+            if username not in usernames:
+                self._users_rights[username] = dict()
+                continue
+
             query = "SELECT table_name, privilege_type FROM \
                 information_schema.table_privileges WHERE grantee = '{}' \
                     AND table_catalog = 'ambulance' \
