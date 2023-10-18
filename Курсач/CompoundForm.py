@@ -38,12 +38,6 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
             1: {}
         }
 
-        self.addRowToMainTable_pushButton.pressed.connect(lambda: self._addRow(True))
-        self.addRowToChildTable_pushButton.pressed.connect(lambda: self._addRow(False))
-        self.addRecord_pushButton.pressed.connect(self._addRecord)
-        self.updateRecord_pushButton.pressed.connect(self._updateRecord)
-        self.deleteRecord_pushButton.pressed.connect(self._deleteRecord)
-
         self._child_table_names = child_table_names
         self._child_tables_column_values = child_tables_column_values
         self._child_tables_columns_names = child_table_columns_names
@@ -51,6 +45,12 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
         for child_table_name in child_table_names:
             self.childTables_comboBox.addItem(child_table_name)
         self.childTables_comboBox.currentTextChanged.connect(self._fillChildTable)
+
+        self.addRowToMainTable_pushButton.pressed.connect(lambda: self._addRow(True))
+        self.addRowToChildTable_pushButton.pressed.connect(lambda: self._addRow(False))
+        self.addRecord_pushButton.pressed.connect(self._addRecord)
+        self.updateRecord_pushButton.pressed.connect(self._updateRecord)
+        self.deleteRecord_pushButton.pressed.connect(self._deleteRecord)
 
         self._fillMainTable(main_table_columns_names, main_table_columns_values)
         self._fillChildTable()
@@ -105,6 +105,7 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
             try:
                 query = "INSERT INTO %s(%s) VALUES (%s)" % (table_name, table_columns, table_values)
                 self._cursor.execute(query)
+                self._conn.commit()
             except psycopg2.errors.InvalidDatetimeFormat:
                 self._conn.rollback()
                 return showError("Неверный формат даты\nПример правильного формата: 2001-01-30")
@@ -144,6 +145,7 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
             try:
                 query = "INSERT INTO %s(%s) VALUES (%s)" % (table_name, table_columns, table_values)
                 self._cursor.execute(query)
+                self._conn.commit()
             except psycopg2.errors.InvalidDatetimeFormat:
                 self._conn.rollback()
                 return showError("Неверный формат даты\nПример правильного формата: 2001-01-30")
@@ -196,6 +198,7 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
         for query in queries:
             try:
                 self._cursor.execute(query)
+                self._conn.commit()
             except Exception as e:
                 showError(str(e))
                 self._conn.rollback()
@@ -213,7 +216,7 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
 
             try:
                 self._cursor.execute(query)
-                self._conn.rollback()
+                self._conn.commit()
             except psycopg2.errors.InsufficientPrivilege:
                 showError("У Вас недостаточно прав для удаленя данных")
                 self._conn.rollback()

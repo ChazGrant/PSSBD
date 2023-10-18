@@ -1,6 +1,6 @@
 from PyQt5 import QtWidgets
 from UI_Forms.login_formUI import Ui_MainWindow
-import psycopg2
+from psycopg2 import connect, OperationalError
 from main import MainWindow
 from UserEditorForm import UserEditorForm
 from CONFIG import CONFIG
@@ -32,17 +32,14 @@ class LoginForm(QtWidgets.QMainWindow, Ui_MainWindow):
     def openUsersEditor(self) -> None:
         username = self.username_textEdit.toPlainText()
         password = self.password_textEdit.toPlainText()
-
-        if (len(username) == 0 or len(password) == 0):
-            return
         
         CONFIG["user"] = username
         CONFIG["password"] = password
 
         try:
-            conn = psycopg2.connect(**CONFIG)
+            conn = connect(**CONFIG)
             cursor = conn.cursor()
-        except psycopg2.OperationalError:
+        except OperationalError:
             return showError("Неверные данные для входа")
         
         if not username == "ambulance_admin":
@@ -58,9 +55,7 @@ class LoginForm(QtWidgets.QMainWindow, Ui_MainWindow):
         username = self.username_textEdit.toPlainText()
         password = self.password_textEdit.toPlainText()
 
-        if not (username or password):
-            return
-
+        # ambulance_admin 0000
         # ambulance_operator (fN6Pn!5
         # doctor u8YVX,:2
         # nurse ]Lg4SSr4
@@ -68,9 +63,9 @@ class LoginForm(QtWidgets.QMainWindow, Ui_MainWindow):
         CONFIG["password"] = password
 
         try:
-            conn = psycopg2.connect(**CONFIG)
+            conn = connect(**CONFIG)
             cursor = conn.cursor()
-        except psycopg2.OperationalError:
+        except OperationalError:
             return showError("Неверные данные для входа")
 
         self.widget = MainWindow(cursor, conn)

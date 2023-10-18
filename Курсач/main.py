@@ -149,7 +149,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.visualizeQuery_pushButton.pressed.connect(self._visualizeQuery)
         self.saveToExcel_pushButton.pressed.connect(self._saveToExcel)
         self.buildSummaryChart_pushButton.pressed.connect(self._buildSummaryChart)
-        self.findByCriteria_pushButton.pressed.connect(self._visualizeTable)
+        self.findByCriteria_pushButton.pressed.connect(self._findByCriteria)
 
         self.buildSummaryChart_pushButton.setEnabled(False)
 
@@ -191,6 +191,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.tableWidget.clear()
         self.tableWidget.setRowCount(0)
         self.tableWidget.setColumnCount(0)
+        self.buildSummaryChart_pushButton.setEnabled(False)
 
     def _tablesChangedEvent(self) -> None:
         if not TESTING_ENABLED:
@@ -207,6 +208,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.params_textEdit.setPlaceholderText(PARAMS[query_idx])
         self.visualizeQuery_pushButton.setEnabled(not bool(params_amount))
         self.__clearTableWidget()
+
+    def _findByCriteria(self) -> None:
+        self.__clearTableWidget()
+        self._visualizeTable()
 
     def _checkParamsAmount(self) -> None:
         query_name = self.queries_comboBox.currentText()
@@ -326,6 +331,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     break
 
             if error_occured:
+                self.tableWidget.removeRow(row_idx)
                 continue
 
             table_columns = ", ".join(columns_names[1:])
@@ -410,15 +416,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         try:
             self._cursor.execute(query)
-            self._conn.rollback()
+            self._conn.commit()
         except psycopg2.errors.InsufficientPrivilege:
             self._conn.rollback()
             return showError("У Вас недостаточно прав для удаленя данных")
+        
+        self.tableWidget.removeRow(selected_row)
 
     def _visualizeTable(self) -> None:
         self.__enableDMLButtons(True)
-        if self.buildSummaryChart_pushButton.isEnabled():
-            self.buildSummaryChart_pushButton.setEnabled(False)
 
         try:
             self._cursor.execute("SELECT * FROM %s %s %s" % (self._selectedTable, \
@@ -449,8 +455,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         if "total" in query_name.lower():
             self.buildSummaryChart_pushButton.setEnabled(True)
-        else:
-            self.buildSummaryChart_pushButton.setEnabled(False)
             
         try:
             self._cursor.execute("SELECT * FROM %s" % (f"{query_name}({input_params})" if input_params else query_name))
@@ -535,9 +539,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             saveDataToExcel(columns_values, values, self.queries_comboBox.currentText())
 
     def _buildSummaryChart(self) -> None:
-        if self.tableWidget.rowCount() == 0:
-            return
-
         values: List[str] = []
         labels: List[str] = [] 
         if self.tableWidget.columnCount() > 1:
