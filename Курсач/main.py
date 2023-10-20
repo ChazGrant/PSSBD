@@ -91,7 +91,10 @@ TABLES_DICT = {
     "Станции скорой помощи": "first_aid_stations",
     "Процедуры": "procedure",
     "Заявки на процедуры": "procedure_application",
-    "Социальные статусы": "social_status"
+    "Социальные статусы": "social_status",
+    "Заброшенные станции скорой помощи": "abandoned_first_aid_stations",
+    "Выздоровевшие пациенты": "healthy_people",
+    "Новые больные": "new_sick_people"
 }
 
 CHILDREN_TABLES = {

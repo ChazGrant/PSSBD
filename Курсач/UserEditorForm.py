@@ -126,6 +126,9 @@ class UserEditorForm(QtWidgets.QMainWindow, Ui_MainWindow):
         all_users = [user[0] for user in self._cursor.fetchall()]
         
         for username in all_users:
+            if username == "postgres":
+                continue
+
             if username not in usernames:
                 self._users_rights[username] = dict()
                 continue

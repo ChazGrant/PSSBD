@@ -18,14 +18,9 @@ CONFIG = {
 # doctor u8YVX,:2
 # nurse ]Lg4SSr4
 
-conn = psycopg2.connect(**CONFIG)
-cursor = conn.cursor()
+_dict = {1: 2, 3: 4}
 
-cursor.execute("SELECT * FROM information_schema.table_privileges \
-            WHERE table_catalog = 'ambulance' AND table_schema = 'public';")
+print(_dict)
+_dict.pop(5)
 
-tables_query = "SELECT table_name FROM information_schema.tables \
-                      WHERE table_schema='public';"
-
-print([desc[0] for desc in cursor.description])
-print(cursor.fetchall())
+print(_dict)

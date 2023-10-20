@@ -30,8 +30,8 @@ class LoginForm(QtWidgets.QMainWindow, Ui_MainWindow):
         self.editUsers_pushButton.pressed.connect(self.openUsersEditor)
 
     def openUsersEditor(self) -> None:
-        username = self.username_textEdit.toPlainText()
-        password = self.password_textEdit.toPlainText()
+        username = self.username_lineEdit.text()
+        password = self.password_lineEdit.text()
         
         CONFIG["user"] = username
         CONFIG["password"] = password
@@ -52,8 +52,8 @@ class LoginForm(QtWidgets.QMainWindow, Ui_MainWindow):
         self.widget.window_closed.connect(self.show)
 
     def login(self) -> None:
-        username = self.username_textEdit.toPlainText()
-        password = self.password_textEdit.toPlainText()
+        username = self.username_lineEdit.text()
+        password = self.password_lineEdit.text()
 
         # ambulance_admin 0000
         # ambulance_operator (fN6Pn!5
@@ -72,8 +72,8 @@ class LoginForm(QtWidgets.QMainWindow, Ui_MainWindow):
         self.widget.show()
         self.hide()
 
-        self.username_textEdit.setText("")
-        self.password_textEdit.setText("")
+        self.username_lineEdit.setText("")
+        self.password_lineEdit.setText("")
 
         self.widget.window_closed.connect(self.show)
 
