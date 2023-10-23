@@ -65,10 +65,13 @@ QUERIES = ['leftOuterJoinRequest', 'requestOnRequestLeftJoin', 'rightOuterJoinRe
 'symmetricInnerRequestWithoutConditionOne', 'symmetricInnerRequestWithoutConditionThree', 
 'symmetricInnerRequestWithoutConditionTwo', 'queryOnTotalQuery', 'totalQueryWithDataCondition', 
 'totalQueryWithDataGroupCondition', 'totalQueryWithGroupCondition',  'totalQueryWithSubquery', 
-'totalQueryWithoutCondition']
+'totalQueryWithoutCondition', 'totalQueryWithTotalAvgFields', 'totalQueryWithDataMaskCondition',
+'unionQuery', 'queryWithIn', 'queryWithNotIn', 'queryWithCase', 
+'totalQueryWithDataConditionWithoutIndex', 'totalQueryWihDataConditionWithIndex']
 
 PARAMS = ['', 'birth_date', '', 'call_date_time', 'call_date_time call_date_time', 'social_status_name', 
-'full_name', '', '', '', '', 'call_reason_id', 'call_reason_id call_reason_id', '', '', '']
+'full_name', '', '', '', '', 'call_reason_id', 'call_reason_id call_reason_id', '', '', '', '', 
+'', '', 'birth_date birth_date', 'birth_date birth_date', '', 'station_number', 'employees_amount']
 
 def showMessage(text: str) -> None:
     msg = QtWidgets.QMessageBox()
@@ -197,8 +200,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.buildSummaryChart_pushButton.setEnabled(False)
 
     def _tablesChangedEvent(self) -> None:
-        if not TESTING_ENABLED:
-            self.__fillColumns()
+        self.__fillColumns()
         self.__clearTableWidget()
 
     def _queriesChangedEvent(self) -> None:
@@ -221,7 +223,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         query_idx = QUERIES.index(query_name)
 
         params_amount = len([param for param in PARAMS[query_idx].split(" ") if param])
-        input_params = [input_param for input_param in self.params_textEdit.toPlainText().split(" ") \
+        input_params = [input_param for input_param in self.params_textEdit.toPlainText().split("_") \
             if input_param]
 
         self.visualizeQuery_pushButton.setEnabled(len(input_params) == params_amount)
@@ -348,6 +350,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 return showError("Неверный формат даты\nПример правильного формата: 2001-01-30")
 
             self._default_rows_amount += 1
+            return showMessage("Запись была успешно добавлена")
 
     def _addCellToArray(self) -> None:
         selected_item = self.tableWidget.selectedItems()[0]
@@ -382,7 +385,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 new_columns_values.append("{} = '{}'".format(column_name, new_value))
 
             if self._table_is_displayed:
-                query = "UPDATE TABLE {} SET {} WHERE {} = {}".format(table_name, 
+                query = "UPDATE {} SET {} WHERE {} = {}".format(table_name, 
                             ", ".join(item for item in new_columns_values),
                             main_column_name,
                             main_column_idx)
@@ -407,6 +410,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 showError(str(e))
                 self._conn.rollback()
 
+        return showMessage("Все записи были успешно изменены")
+
     def _deleteRecord(self) -> None:
         current_table = TABLES_DICT[self.tables_comboBox.currentText()]
         selected_row = self.tableWidget.currentRow()
@@ -425,6 +430,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             return showError("У Вас недостаточно прав для удаленя данных")
         
         self.tableWidget.removeRow(selected_row)
+        return showMessage("Запись была успешно удалена")
 
     def _visualizeTable(self) -> None:
         self.__enableDMLButtons(True)
@@ -447,7 +453,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def _visualizeQuery(self) -> None:
         query_name = self.queries_comboBox.currentText()
 
-        input_params = [input_param for input_param in self.params_textEdit.toPlainText().split(" ") \
+        input_params = [input_param for input_param in self.params_textEdit.toPlainText().split("_") \
             if input_param]
         input_params = ", ".join([f"'{input_param}'" for input_param in input_params])
         
@@ -481,7 +487,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def __fillColumns(self) -> None:
         selected_table = TABLES_DICT[self.tables_comboBox.currentText()]
-        self._cursor.execute("SELECT * FROM %s LIMIT 0;" % selected_table)
+        try:
+            self._cursor.execute("SELECT * FROM %s LIMIT 0;" % selected_table)
+        except psycopg2.errors.InsufficientPrivilege:
+            self._conn.rollback()
+            self.columns_comboBox.clear()
+            return showError("Недостаточно прав")
         columns_names: List[str] = [desc[0] for desc in self._cursor.description]
         
         self.columns_comboBox.clear()

@@ -14,6 +14,13 @@ def showError(text: str) -> None:
     msg.setWindowTitle("Info")
     msg.exec_()
 
+def showMessage(text: str) -> None:
+    msg = QtWidgets.QMessageBox()
+    msg.setIcon(QtWidgets.QMessageBox.Information)
+    msg.setText(text)
+    msg.setWindowTitle("Info")
+    msg.exec_()
+
 
 class UserEditorForm(QtWidgets.QMainWindow, Ui_MainWindow):
     window_closed = pyqtSignal()
@@ -64,6 +71,8 @@ class UserEditorForm(QtWidgets.QMainWindow, Ui_MainWindow):
         self.users_listWidget.clear()
         self._setUsers()
 
+        return showMessage("Пользователь был успешно добавлен")
+
     def _deleteUser(self):
         if not self.users_listWidget.currentItem():
             return
@@ -102,6 +111,8 @@ class UserEditorForm(QtWidgets.QMainWindow, Ui_MainWindow):
 
         selected_row = self.users_listWidget.row(selected_item)
         self.users_listWidget.takeItem(selected_row)
+
+        return showMessage("Пользователь был успешно удалён")
 
     def _setUsers(self):
         for username in self._users_rights.keys():
@@ -243,4 +254,6 @@ class UserEditorForm(QtWidgets.QMainWindow, Ui_MainWindow):
                     self._conn.commit()
                 except Exception as e:
                     self._conn.rollback()
+
+        return showMessage("Привилегии были успешно обновлены")
             

@@ -13,6 +13,13 @@ def showError(text: str) -> None:
     msg.setWindowTitle("Info")
     msg.exec_()
 
+def showMessage(text: str) -> None:
+    msg = QtWidgets.QMessageBox()
+    msg.setIcon(QtWidgets.QMessageBox.Information)
+    msg.setText(text)
+    msg.setWindowTitle("Info")
+    msg.exec_()
+
 
 class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
     first_choice_selected, second_choice_selected = pyqtSignal(), pyqtSignal() 
@@ -63,18 +70,19 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
         if is_main_table:
             next_row_count = self.mainTable_tableWidget.rowCount() + 1
             self.mainTable_tableWidget.setRowCount(next_row_count)
-            self._new_rows_added[0].append(next_row_count)
+            self._new_rows_added[1].append(next_row_count)
         else:
             next_row_count = self.childTable_tableWidget.rowCount() + 1
             self.childTable_tableWidget.setRowCount(next_row_count)
-            self._new_rows_added[1].append(next_row_count)
+            self._new_rows_added[0].append(next_row_count)
 
     def _addRecord(self) -> None:
         self._addRecordToTheMainTable()
         self._addRecordToTheChildTable()
+        return showMessage("Все записи были успешно добавлен")
 
     def _addRecordToTheMainTable(self) -> None:
-        new_rows_added = self._new_rows_added[0]
+        new_rows_added = self._new_rows_added[1]
 
         columns_names: List[str] = []
         table_name = self._main_table_name
@@ -114,10 +122,10 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
             self._conn.rollback()
 
     def _addRecordToTheChildTable(self) -> None:
-        new_rows_added = self._new_rows_added[1]
+        new_rows_added = self._new_rows_added[0]
 
         columns_names: List[str] = []
-        table_name = self._main_table_name
+        table_name = self.childTables_comboBox.currentText()
         for column in range(self.childTable_tableWidget.columnCount()):
             columns_names.append(self.childTable_tableWidget.horizontalHeaderItem(column).text())
 
@@ -162,12 +170,16 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
     def _addCellToAray(self, table_widget: QtWidgets.QTableWidget, table_idx: int) -> None:
         selected_item = table_widget.selectedItems()[0]
         new_value = selected_item.text()
+        default_rows_amount = [self._default_child_rows_amount, self._default_main_rows_amount]
 
-        seleted_row = table_widget.row(selected_item)
+        selected_row = table_widget.row(selected_item)
         seleted_column = table_widget.column(selected_item)
 
+        if (selected_row + 1) > default_rows_amount[table_idx]:
+            return
+
         selected_column_name = table_widget.horizontalHeaderItem(seleted_column).text()
-        idx_column_value = table_widget.item(seleted_row, 0).text()
+        idx_column_value = table_widget.item(selected_row, 0).text()
         
         if idx_column_value not in self._updatedRecordsInfo[table_idx].keys():
             self._updatedRecordsInfo[table_idx][idx_column_value] = {selected_column_name: new_value}
@@ -189,7 +201,7 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
                 for column_name, new_value in items_dict.items():
                     new_columns_values.append("{} = '{}'".format(column_name, new_value))
 
-                query = "UPDATE TABLE {} SET {} WHERE {} = {}".format(table_name, 
+                query = "UPDATE {} SET {} WHERE {} = {}".format(table_name, 
                             ", ".join(item for item in new_columns_values),
                             main_column_name,
                             main_column_idx)
@@ -202,6 +214,8 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
             except Exception as e:
                 showError(str(e))
                 self._conn.rollback()
+
+        return showMessage("Все записи были успешно изменены")
 
     def _deleteRecord(self) -> None:
         current_tables = [self._main_table_name, self.childTables_comboBox.currentText()]
@@ -221,6 +235,12 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
                 showError("У Вас недостаточно прав для удаленя данных")
                 self._conn.rollback()
                 return
+            
+            self._getTablesWidgets[idx].removeRow(selected_row)
+
+        return showMessage("Запись была успешно удалена")
+            
+        
 
     def _fillChildTable(self) -> None:
         try:
@@ -238,6 +258,7 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
         self.childTable_tableWidget.setColumnCount(len(child_table_columns_names))
 
         self.childTable_tableWidget.setHorizontalHeaderLabels(child_table_columns_names)
+        self._default_child_rows_amount = len(child_table_values)
         for row_idx, items in enumerate(child_table_values):
             for column_idx, item in enumerate(items):
                 _item = QtWidgets.QTableWidgetItem(str(item))
@@ -252,6 +273,8 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
         self.mainTable_tableWidget.setColumnCount(len(main_table_columns_names))
 
         self.mainTable_tableWidget.setHorizontalHeaderLabels(main_table_columns_names)
+
+        self._default_main_rows_amount = len(main_table_columns_values)
         for row_idx, items in enumerate(main_table_columns_values):
             for column_idx, item in enumerate(items):
                 _item = QtWidgets.QTableWidgetItem(str(item))

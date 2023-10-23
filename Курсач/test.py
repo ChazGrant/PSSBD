@@ -7,20 +7,36 @@ import complex_requests, requests
 
 CONFIG = {
             "database": "ambulance",
-            "user": "ambulance_operator",
-            "password": "(fN6Pn!5",
-            "host": "127.0.0.1",
+            "user": "postgres",
+            "password": "postgres",
+            "host": "192.168.0.106",
             "port": 5432
         }
 
+conn = psycopg2.connect(**CONFIG)
+cursor = conn.cursor()
 
 # ambulance_operator (fN6Pn!5
 # doctor u8YVX,:2
 # nurse ]Lg4SSr4
 
-_dict = {1: 2, 3: 4}
+QUERIES = ['leftOuterJoinRequest', 'requestOnRequestLeftJoin', 'rightOuterJoinRequest', 
+'symmetricInnerRequestWithConditionDateOne', 'symmetricInnerRequestWithConditionDateTwo', 
+'symmetricInnerRequestWithConditionExternalKeyOne', 'symmetricInnerRequestWithConditionExternalKeyTwo', 
+'symmetricInnerRequestWithoutConditionOne', 'symmetricInnerRequestWithoutConditionThree', 
+'symmetricInnerRequestWithoutConditionTwo', 'queryOnTotalQuery', 'totalQueryWithDataCondition', 
+'totalQueryWithDataGroupCondition', 'totalQueryWithGroupCondition',  'totalQueryWithSubquery', 
+'totalQueryWithoutCondition']
 
-print(_dict)
-_dict.pop(5)
+for query in QUERIES:
+    query = query.lower()
+    cursor.execute("select pg_get_functiondef(oid) from pg_proc where proname = '{}';".format(query))
 
-print(_dict)
+    print(query)
+    try:
+        # cursor.fetchone()[0].replace("function", "")
+        print(cursor.fetchone()[0].replace("function", ""))
+    except TypeError:
+        cursor.execute("SELECT pg_get_viewdef('{}', true);".format(query))
+        print(cursor.fetchone()[0])
+    print()
