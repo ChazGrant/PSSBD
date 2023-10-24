@@ -29,8 +29,8 @@ class LoginForm(QtWidgets.QMainWindow, Ui_MainWindow):
         self.login_pushButton.pressed.connect(self.login)
         self.editUsers_pushButton.pressed.connect(self.openUsersEditor)
 
-        # self.username_lineEdit.setText("ambulance_admin")
-        # self.password_lineEdit.setText("0000")
+        self.username_lineEdit.setText("ambulance_admin")
+        self.password_lineEdit.setText("0000")
 
     def openUsersEditor(self) -> None:
         username = self.username_lineEdit.text()

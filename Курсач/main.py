@@ -49,6 +49,9 @@ import matplotlib.pyplot as plt
 import openpyxl
 import datetime
 
+from CONSTANTS import COLUMNS_NAMES, REVERSED_COLUMNS_NAMES, TABLES_DICT, CHILDREN_TABLES, \
+    MODIFIED_VIEW, QUERIES, PARAMS
+
 from CompoundForm import CompoundForm
 
 
@@ -56,22 +59,6 @@ if "--test" in sys.argv:
     TESTING_ENABLED = 1
 else:
     TESTING_ENABLED = 0
-
-MODIFIED_VIEW = "symmetricInnerRequestWithoutConditionTwo"
-QUERIES: List[str] = list()
-QUERIES = ['leftOuterJoinRequest', 'requestOnRequestLeftJoin', 'rightOuterJoinRequest', 
-'symmetricInnerRequestWithConditionDateOne', 'symmetricInnerRequestWithConditionDateTwo', 
-'symmetricInnerRequestWithConditionExternalKeyOne', 'symmetricInnerRequestWithConditionExternalKeyTwo', 
-'symmetricInnerRequestWithoutConditionOne', 'symmetricInnerRequestWithoutConditionThree', 
-'symmetricInnerRequestWithoutConditionTwo', 'queryOnTotalQuery', 'totalQueryWithDataCondition', 
-'totalQueryWithDataGroupCondition', 'totalQueryWithGroupCondition',  'totalQueryWithSubquery', 
-'totalQueryWithoutCondition', 'totalQueryWithTotalAvgFields', 'totalQueryWithDataMaskCondition',
-'unionQuery', 'queryWithIn', 'queryWithNotIn', 'queryWithCase', 
-'totalQueryWithDataConditionWithoutIndex', 'totalQueryWihDataConditionWithIndex']
-
-PARAMS = ['', 'birth_date', '', 'call_date_time', 'call_date_time call_date_time', 'social_status_name', 
-'full_name', '', '', '', '', 'call_reason_id', 'call_reason_id call_reason_id', '', '', '', '', 
-'', '', 'birth_date birth_date', 'birth_date birth_date', '', 'station_number', 'employees_amount']
 
 def showMessage(text: str) -> None:
     msg = QtWidgets.QMessageBox()
@@ -87,24 +74,6 @@ def showError(text: str) -> None:
     msg.setWindowTitle("Info")
     msg.exec_()
 
-TABLES_DICT = {
-    "Больные": "sick_people",
-    "Заявки на вызов": "call_requests",
-    "Причины вызова": "call_reason",
-    "Станции скорой помощи": "first_aid_stations",
-    "Процедуры": "procedure",
-    "Заявки на процедуры": "procedure_application",
-    "Социальные статусы": "social_status",
-    "Заброшенные станции скорой помощи": "abandoned_first_aid_stations",
-    "Выздоровевшие пациенты": "healthy_people",
-    "Новые больные": "new_sick_people"
-}
-
-CHILDREN_TABLES = {
-    "sick_people": ["social_status"],
-    "call_requests": ["sick_people", "call_reason"],
-    "procedure_application": ["procedure", "call_requests"]
-}
 
 def drawPieChart(values: List[int], labels: List[str], title: str) -> Union[str, None]:
     if not len(values) == len(labels):
@@ -230,7 +199,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     @property
     def _selectedColumn(self) -> str:
-        return self.columns_comboBox.currentText()
+        return REVERSED_COLUMNS_NAMES[self.columns_comboBox.currentText()]
 
     @property
     def _selectedTable(self) -> str:
@@ -270,11 +239,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         main_table_columns_names: List[str] = [desc[0] for desc in self._cursor.description]
         main_table_columns_values: List[Any] = self._cursor.fetchall()
 
-        child_table_names = CHILDREN_TABLES[selected_table]
+        child_table_names = CHILDREN_TABLES[self.tables_comboBox.currentText()]
         child_tables_columns_names: List[str] = []
         child_tables_columns_values: List[str] = []
         for child_table_name in child_table_names:
-            self._cursor.execute("SELECT * FROM %s" % child_table_name)
+            self._cursor.execute("SELECT * FROM %s" % TABLES_DICT[child_table_name])
             child_tables_columns_names.append([desc[0] for desc in self._cursor.description])
             child_tables_columns_values.append(self._cursor.fetchall())
 
@@ -497,7 +466,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         
         self.columns_comboBox.clear()
         for column_name in columns_names:
-            self.columns_comboBox.addItem(column_name)
+            self.columns_comboBox.addItem(COLUMNS_NAMES[column_name])
 
     def __fillData(self, columns_names: List[str]) -> None:
         try:
@@ -506,9 +475,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             pass
 
         columns_amount = len(columns_names)
+        russian_columns_amount = [COLUMNS_NAMES[column] for column in columns_names]
         
         self.tableWidget.setColumnCount(columns_amount)
-        self.tableWidget.setHorizontalHeaderLabels(columns_names)
+        self.tableWidget.setHorizontalHeaderLabels(russian_columns_amount)
 
         data = self._cursor.fetchall()
         self.tableWidget.setRowCount(len(data))

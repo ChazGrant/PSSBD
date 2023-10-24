@@ -5,6 +5,8 @@ import psycopg2
 
 from typing import List, Any, Dict, Union
 
+from CONSTANTS import COLUMNS_NAMES, REVERSED_COLUMNS_NAMES, TABLES_DICT
+
 
 def showError(text: str) -> None:
     msg = QtWidgets.QMessageBox()
@@ -109,9 +111,10 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
                 continue
 
             table_columns = ", ".join(columns_names[1:])
+            table_columns = [REVERSED_COLUMNS_NAMES[column] for column in table_columns]
             table_values = ", ".join([f"'{value}'" for value in row])
             try:
-                query = "INSERT INTO %s(%s) VALUES (%s)" % (table_name, table_columns, table_values)
+                query = "INSERT INTO %s(%s) VALUES (%s)" % (TABLES_DICT[table_name], table_columns, table_values)
                 self._cursor.execute(query)
                 self._conn.commit()
             except psycopg2.errors.InvalidDatetimeFormat:
@@ -148,10 +151,11 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
             if error_occured:
                 continue
 
-            table_columns = ", ".join(columns_names[1:])
+            table_columns = [REVERSED_COLUMNS_NAMES[column] for column in columns_names[1:]]
+            table_columns = ", ".join(table_columns)
             table_values = ", ".join([f"'{value}'" for value in row])
             try:
-                query = "INSERT INTO %s(%s) VALUES (%s)" % (table_name, table_columns, table_values)
+                query = "INSERT INTO %s(%s) VALUES (%s)" % (TABLES_DICT[table_name], table_columns, table_values)
                 self._cursor.execute(query)
                 self._conn.commit()
             except psycopg2.errors.InvalidDatetimeFormat:
@@ -186,7 +190,6 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
         else:
             self._updatedRecordsInfo[table_idx][idx_column_value][selected_column_name] = new_value
 
-        print(self._updatedRecordsInfo)
 
     def _updateRecord(self) -> None:
         queries: List[str] = []
@@ -218,14 +221,14 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
         return showMessage("Все записи были успешно изменены")
 
     def _deleteRecord(self) -> None:
-        current_tables = [self._main_table_name, self.childTables_comboBox.currentText()]
+        current_tables = [self._main_table_name, TABLES_DICT[self.childTables_comboBox.currentText()]]
         main_columns = [self.mainTable_tableWidget.horizontalHeaderItem(0).text(),
                         self.childTable_tableWidget.horizontalHeaderItem(0).text()]
         for idx, table_widget in enumerate(self._getTablesWidgets):
             selected_row = table_widget.currentRow()
             unique_idx = table_widget.item(selected_row, 0).text()
             
-            column_name = main_columns[idx]
+            column_name = REVERSED_COLUMNS_NAMES[main_columns[idx]]
             query = "DELETE FROM %s WHERE %s = %s" % (current_tables[idx], column_name, unique_idx)
 
             try:
@@ -239,8 +242,6 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
             self._getTablesWidgets[idx].removeRow(selected_row)
 
         return showMessage("Запись была успешно удалена")
-            
-        
 
     def _fillChildTable(self) -> None:
         try:
@@ -257,7 +258,8 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
         self.childTable_tableWidget.setRowCount(len(child_table_values))
         self.childTable_tableWidget.setColumnCount(len(child_table_columns_names))
 
-        self.childTable_tableWidget.setHorizontalHeaderLabels(child_table_columns_names)
+        self.childTable_tableWidget.setHorizontalHeaderLabels([COLUMNS_NAMES[column] for column in \
+                                                              child_table_columns_names])
         self._default_child_rows_amount = len(child_table_values)
         for row_idx, items in enumerate(child_table_values):
             for column_idx, item in enumerate(items):
@@ -272,7 +274,8 @@ class CompoundForm(QtWidgets.QMainWindow, Ui_Form):
         self.mainTable_tableWidget.setRowCount(len(main_table_columns_values))
         self.mainTable_tableWidget.setColumnCount(len(main_table_columns_names))
 
-        self.mainTable_tableWidget.setHorizontalHeaderLabels(main_table_columns_names)
+        self.mainTable_tableWidget.setHorizontalHeaderLabels([COLUMNS_NAMES[column] for column in \
+                                                              main_table_columns_names])
 
         self._default_main_rows_amount = len(main_table_columns_values)
         for row_idx, items in enumerate(main_table_columns_values):
