@@ -33,7 +33,7 @@ class Ui_MainWindow(object):
         self.password_lineEdit.setObjectName("password_lineEdit")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 145, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 145, 30))
         self.menubar.setObjectName("menubar")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
@@ -45,7 +45,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Авторизация"))
         self.login_pushButton.setText(_translate("MainWindow", "Вход"))
         self.editUsers_pushButton.setText(_translate("MainWindow", "Редактировать \n"
 "пользователей"))

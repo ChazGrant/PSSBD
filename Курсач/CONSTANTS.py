@@ -30,7 +30,19 @@ COLUMNS_NAMES = {'sick_people_id': 'Идентификатор больного'
                  'new_full_name': 'ФИО нового больного', 
                  'new_birth_date': 'Дата рождения нового больного',
                  'new_phone_number': 'Номер телефона нового больного', 
-                 'new_address': 'Адрес нового больного'
+                 'new_address': 'Адрес нового больного',
+                 '_full_name': 'ФИО', 
+                 '_phone_number': 'Номер телефона',
+                 '_money_payment': 'Оплата',
+                 'total_payment': 'Общая оплата', 
+                 'total': 'Общее', 
+                 'avg': 'Среднее', 
+                 'min': 'Минимальное', 
+                 'max': 'Максимум',
+                 '_call_reason_name': 'Причина вызова', 
+                 '_address': 'Адрес', 
+                 '_employees_amount': 'Количество сотрудников', 
+                 '_first_aid_station_number': 'Номер скорой помощи'
                  }
 
 REVERSED_COLUMNS_NAMES = {value: key for key, value in COLUMNS_NAMES.items()}
@@ -55,16 +67,32 @@ CHILDREN_TABLES = {
 }
 
 MODIFIED_VIEW = "symmetricInnerRequestWithoutConditionTwo"
-QUERIES = ['leftOuterJoinRequest', 'requestOnRequestLeftJoin', 'rightOuterJoinRequest', 
-'symmetricInnerRequestWithConditionDateOne', 'symmetricInnerRequestWithConditionDateTwo', 
-'symmetricInnerRequestWithConditionExternalKeyOne', 'symmetricInnerRequestWithConditionExternalKeyTwo', 
-'symmetricInnerRequestWithoutConditionOne', 'symmetricInnerRequestWithoutConditionThree', 
-'symmetricInnerRequestWithoutConditionTwo', 'queryOnTotalQuery', 'totalQueryWithDataCondition', 
-'totalQueryWithDataGroupCondition', 'totalQueryWithGroupCondition',  'totalQueryWithSubquery', 
-'totalQueryWithoutCondition', 'totalQueryWithTotalAvgFields', 'totalQueryWithDataMaskCondition',
-'unionQuery', 'queryWithIn', 'queryWithNotIn', 'queryWithCase', 
-'totalQueryWithDataConditionWithoutIndex', 'totalQueryWihDataConditionWithIndex']
+QUERIES = {
+           'Вывести социанльый статус и дату рождения': 'leftOuterJoinRequest', 
+           'Вывести ФИО и номер телефона больных, у которых дата рождения больше заданного': 'requestOnRequestLeftJoin', 
+           'Вывести заявку на вызов и оплату': 'rightOuterJoinRequest', 
+           'Вывести все заявки на вызов, дата которых больше заданной': 'symmetricInnerRequestWithConditionDateOne', 
+           'Вывести информацию по заявкам на вызов, у которых дата оформления заявки находится в промежутке заданных дат': 'symmetricInnerRequestWithConditionDateTwo', 
+           'Вывести информацию по больным с указанным статусом': 'symmetricInnerRequestWithConditionExternalKeyOne', 
+           'Вывести информацию по заявке на вызов человека с указанным ФИО': 'symmetricInnerRequestWithConditionExternalKeyTwo', 
+           'Вывести короткую инфоромацию по заявкам на вызов': 'symmetricInnerRequestWithoutConditionTwo', 
+           'Вывести короткую информацию о больных': 'symmetricInnerRequestWithoutConditionThree', 
+           'Вывести дату заявки и стоимость': 'queryOnTotalQuery', 
+           'Вывести общую сумму где идентификатор вызова равен заданному': 'totalQueryWithDataCondition', 
+           'Вывести причину вызова и сумму всех заявок на вызов, идентификатор причины вызова которых подходиит под одно из заданных значений': 'totalQueryWithDataGroupCondition', 
+           'Вывести итоговую сумму по каждой заявке на вызов': 'totalQueryWithGroupCondition', 
+           'Вывести дату заявки и оплату': 'totalQueryWithSubquery', 
+           'Вывести общую сумму по всем заявкам на вызов': 'totalQueryWithoutCondition', 
+           'Вывести общую стоимость и среднюю стоимость дополнительых занятий': 'totalQueryWithTotalAvgFields', 
+           'Вывести среднюю сумму заявок, где причина заявки соответствует заданной': 'totalQueryWithDataMaskCondition', 
+           'Вывести таблицу "больные" и "социальные статусы"': 'unionQuery', 
+           'Вывести всех больных, дата рождения которых сответсвует одной из заданной дате': 'queryWithIn', 
+           'Вывести всех больных, дата рождения которых не сответсвует ни одной из заданной дате ': 'queryWithNotIn', 
+           'Вывести информацию о больных и их совершеннолетие': 'queryWithCase', 
+           'Вывести общее количество работников тех участков скорой помощи, номера которых больше заданного': 'totalQueryWithDataConditionWithoutIndex', 
+           'Вывести последний номер станции скорой помощи, у которой количество сотрудников менше заданного числа': 'totalQueryWihDataConditionWithIndex'
+           }
 
 PARAMS = ['', 'birth_date', '', 'call_date_time', 'call_date_time call_date_time', 'social_status_name', 
-'full_name', '', '', '', '', 'call_reason_id', 'call_reason_id call_reason_id', '', '', '', '', 
-'', '', 'birth_date birth_date', 'birth_date birth_date', '', 'station_number', 'employees_amount']
+'full_name', '', '', '', 'call_reason_id', 'call_reason_id call_reason_id', '', '', '', '', 
+'call_reason_name', '', 'birth_date birth_date', 'birth_date birth_date', '', 'station_number', 'employees_amount']

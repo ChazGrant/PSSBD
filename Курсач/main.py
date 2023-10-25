@@ -81,6 +81,7 @@ def drawPieChart(values: List[int], labels: List[str], title: str) -> Union[str,
 
     max_index_value = values.index(max(values))
     get_value = lambda x: np_round(x / 100 * sum(values))
+
     plt.pie(values, labels=labels, explode=tuple([0 for _ in values[:max_index_value]]) + tuple([.1]) + tuple([0 for _ in values[max_index_value + 1:]]), autopct=get_value)
     plt.title(title)
     plt.show()
@@ -155,7 +156,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.tables_comboBox.addItem(table)
 
     def __setQueries(self) -> None:
-        for query in QUERIES:
+        for query in QUERIES.keys():
             self.queries_comboBox.addItem(query)
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
@@ -174,7 +175,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def _queriesChangedEvent(self) -> None:
         query_name = self.queries_comboBox.currentText()
-        query_idx = QUERIES.index(query_name)
+        query_idx = list(QUERIES.keys()).index(query_name)
         params_amount = len([param for param in PARAMS[query_idx].split(" ") if param])
 
         self.params_textEdit.setText("")
@@ -189,7 +190,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def _checkParamsAmount(self) -> None:
         query_name = self.queries_comboBox.currentText()
-        query_idx = QUERIES.index(query_name)
+        query_idx = list(QUERIES.keys()).index(query_name)
 
         params_amount = len([param for param in PARAMS[query_idx].split(" ") if param])
         input_params = [input_param for input_param in self.params_textEdit.toPlainText().split("_") \
@@ -284,7 +285,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if self._table_is_displayed:
             table_name = TABLES_DICT[self.tables_comboBox.currentText()]
         else:
-            table_name = self.queries_comboBox.currentText()
+            table_name = QUERIES[self.queries_comboBox.currentText()]
         for column in range(self.tableWidget.columnCount()):
             columns_names.append(self.tableWidget.horizontalHeaderItem(column).text())
 
@@ -345,7 +346,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             table_name = TABLES_DICT[self.tables_comboBox.currentText()]
             main_column_name = self.tableWidget.horizontalHeaderItem(0).text()
         else:
-            table_name = self.queries_comboBox.currentText()
+            table_name = QUERIES[self.queries_comboBox.currentText()]
             main_column_name = self.tableWidget.horizontalHeaderItem(1).text()
         
         for main_column_idx, items_dict in self._updatedRecordsInfo.items():
@@ -420,7 +421,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.__fillData(columns_names)
 
     def _visualizeQuery(self) -> None:
-        query_name = self.queries_comboBox.currentText()
+        query_name = QUERIES[self.queries_comboBox.currentText()]
 
         input_params = [input_param for input_param in self.params_textEdit.toPlainText().split("_") \
             if input_param]
@@ -475,6 +476,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             pass
 
         columns_amount = len(columns_names)
+        print(columns_names)
         russian_columns_amount = [COLUMNS_NAMES[column] for column in columns_names]
         
         self.tableWidget.setColumnCount(columns_amount)
@@ -486,16 +488,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         for row_idx, row in enumerate(data):
             for column_idx, item in enumerate(row):
                 if not self._table_is_displayed and \
-                    self.queries_comboBox.currentText() == MODIFIED_VIEW and \
+                    QUERIES[self.queries_comboBox.currentText()] == MODIFIED_VIEW and \
                     column_idx == 1:
                     self._default_procedures_names.append(item)
 
                 _item = QtWidgets.QTableWidgetItem(str(item))
-                if (self.queries_comboBox.currentText() == MODIFIED_VIEW and \
+                if (QUERIES[self.queries_comboBox.currentText()] == MODIFIED_VIEW and \
                     column_idx == 0 and \
                     not self._table_is_displayed) or \
                     (not self._table_is_displayed and \
-                    not self.queries_comboBox.currentText() == MODIFIED_VIEW):
+                    not QUERIES[self.queries_comboBox.currentText()] == MODIFIED_VIEW):
                     _item.setFlags(QtCore.Qt.ItemFlag.ItemIsEnabled)
                 self.tableWidget.setItem(row_idx, column_idx, _item)
 
@@ -520,7 +522,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if self._table_is_displayed:
             saveDataToExcel(columns_values, values, self.tables_comboBox.currentText())
         else:
-            saveDataToExcel(columns_values, values, self.queries_comboBox.currentText())
+            saveDataToExcel(columns_values, values, QUERIES[self.queries_comboBox.currentText()])
 
     def _buildSummaryChart(self) -> None:
         values: List[str] = []
@@ -528,7 +530,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if self.tableWidget.columnCount() > 1:
             for row in range(self.tableWidget.rowCount()):
                 labels.append(self.tableWidget.item(row, 0).text())
-                values.append(int(self.tableWidget.item(row, 1).text()))
+                try:
+                    values.append(int(self.tableWidget.item(row, 1).text()))
+                except ValueError:
+                    values.append(float(self.tableWidget.item(row, 1).text()))
         else:
             for column in range(self.tableWidget.columnCount()):
                 try:
